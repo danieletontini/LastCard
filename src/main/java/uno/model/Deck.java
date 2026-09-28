@@ -1,0 +1,40 @@
+package uno.model;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+public class Deck {
+
+    private final List<Card> cards;
+    private final Random random;
+
+    public Deck(List<Card> cards) {
+        this.cards = new ArrayList<>(cards);
+        this.random = new Random();
+    }
+
+    public List<Card> getCards() {
+        return List.copyOf(cards);
+    }
+
+    public void shuffle() {
+        Collections.shuffle(cards, random);
+    }
+
+    public Card draw() {
+        if (cards.isEmpty()) {
+            throw new IllegalStateException("Il mazzo è vuoto. Non ci sono carte da pescare.");
+        }
+        return cards.remove(cards.size() - 1);
+    }
+
+    public boolean isEmpty() {
+        return cards.isEmpty();
+    }
+
+    public int getCardCount() {
+        return cards.size();
+    }
+}
