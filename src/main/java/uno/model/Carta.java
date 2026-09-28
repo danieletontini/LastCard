@@ -14,7 +14,7 @@ public abstract class Carta {
 
     public abstract String simbolo();
 
-    public abstract int valore();
+    public abstract int valorePunti();
 
 
 }
