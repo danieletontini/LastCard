@@ -31,6 +31,7 @@ public abstract class Card {
         return 0;
     }
 
+    /*due carte sono uguali se hanno la stessa classe,colore,simbolo */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -42,7 +43,7 @@ public abstract class Card {
         Card other = (Card) o;
         return color == other.color && symbol().equals(other.symbol());
     }
-    /*due carte sono uguali se hanno la stessa classe,colore,simbolo */
+    
     @Override
     public int hashCode() {
         return Objects.hash(getClass(), color, symbol());
