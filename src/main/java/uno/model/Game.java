@@ -9,11 +9,12 @@ public class Game {
     private int currentIndex;
     private Direction direction;
     private GameState state;
+    private CardColor activeColor;
 
     public Game(List<String> playerNames) {
         Objects.requireNonNull(playerNames, "playerNames");
-        if (playerNames.isEmpty()) {
-            throw new IllegalArgumentException("A game must have at least one player.");
+        if (playerNames.size() < 2 || playerNames.size() > 10) {
+            throw new IllegalArgumentException("A game must have between 2 and 10 players.");
         }
 
         this.players = new ArrayList<>();
@@ -24,6 +25,7 @@ public class Game {
         this.currentIndex = 0;
         this.direction = Direction.CLOCKWISE;
         this.state = GameState.NOT_STARTED;
+        this.activeColor = null;
     }
 
     public void start() {
@@ -51,9 +53,51 @@ public class Game {
     }
 
     public Player getCurrentPlayer() {
-        if (players.isEmpty()) {
-            return null;
-        }
         return players.get(currentIndex);
+    }
+
+    public List<Player> getPlayers() {
+        return List.copyOf(players);
+    }
+
+    public CardColor getActiveColor() {
+        return activeColor;
+    }
+
+    public void nextTurn() {
+        ensureInProgress();
+        advanceTurn();
+    }
+
+    public void reverseDirection() {
+        ensureInProgress();
+        direction = direction == Direction.CLOCKWISE
+                ? Direction.COUNTERCLOCKWISE
+                : Direction.CLOCKWISE;
+    }
+
+    public void skipNext() {
+        ensureInProgress();
+        advanceTurn();
+        advanceTurn();
+    }
+
+    public void setActiveColor(CardColor color) {
+        Objects.requireNonNull(color, "color");
+        if (color == CardColor.BLACK) {
+            throw new IllegalArgumentException("The active color cannot be BLACK.");
+        }
+        activeColor = color;
+    }
+
+    private void advanceTurn() {
+        int step = direction == Direction.CLOCKWISE ? 1 : -1;
+        currentIndex = Math.floorMod(currentIndex + step, players.size());
+    }
+
+    private void ensureInProgress() {
+        if (state != GameState.IN_PROGRESS) {
+            throw new IllegalStateException("The game is not in progress.");
+        }
     }
 }
