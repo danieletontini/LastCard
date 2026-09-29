@@ -3,6 +3,7 @@ package uno.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class Game {
     private final List<Player> players;
@@ -55,5 +56,29 @@ public class Game {
             return null;
         }
         return players.get(currentIndex);
+    }
+
+    public List<Card> drawCards(Player player, int n) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public void nextTurn() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public void reverseDirection() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public void skipNext() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public void setActiveColor(CardColor color) {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public Optional<Player> getWinner() {
+        throw new UnsupportedOperationException("Not implemented yet.");
     }
 }
