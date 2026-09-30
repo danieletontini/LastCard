@@ -16,4 +16,5 @@ public class DrawTwo extends ActionCard {
     }
     //implementare applyEffect() per far pescare 2 carte al giocatore successivo
     
+    
 }

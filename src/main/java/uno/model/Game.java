@@ -11,6 +11,9 @@ public class Game {
     private Direction direction;
     private GameState state;
     private CardColor activeColor;
+    private final Deck deck;
+    private final DiscardPile discardPile;
+
 
     public Game(List<String> playerNames) {
         Objects.requireNonNull(playerNames, "playerNames");
@@ -27,6 +30,9 @@ public class Game {
         this.direction = Direction.CLOCKWISE;
         this.state = GameState.NOT_STARTED;
         this.activeColor = null;
+        this.deck = DeckFactory.createClassic();
+        this.discardPile = new DiscardPile();
+
     }
 
     public void start() {
@@ -110,4 +116,14 @@ public class Game {
     public Optional<Player> getWinner() {
         throw new UnsupportedOperationException("Not implemented yet.");
     }
+
+
+    public Player getNextPlayer() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public void awaitColorChoice() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
 }
