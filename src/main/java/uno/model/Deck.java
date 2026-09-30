@@ -38,5 +38,10 @@ public class Deck {
         return cards.size();
     }
 
+    // Rimette nel mazzo gli scarti, tranne la carta in cima, e rimescola.
+    public void refillFrom(DiscardPile discardPile) {
+        cards.addAll(discardPile.takeAllButTop());
+        shuffle();
+    }
     
 }
