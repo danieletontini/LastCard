@@ -65,7 +65,14 @@ public class Game {
         return activeColor;
     }
 
+    //passa al giocatore successivo nel senso di marcia.
     public void nextTurn() {
+        ensureInProgress();
+        advanceTurn();
+    }
+
+     //salta un giocatore in più
+    public void skipNext() {
         ensureInProgress();
         advanceTurn();
     }
@@ -75,12 +82,6 @@ public class Game {
         direction = direction == Direction.CLOCKWISE
                 ? Direction.COUNTERCLOCKWISE
                 : Direction.CLOCKWISE;
-    }
-
-    public void skipNext() {
-        ensureInProgress();
-        advanceTurn();
-        advanceTurn();
     }
 
     public void setActiveColor(CardColor color) {

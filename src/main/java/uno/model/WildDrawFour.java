@@ -6,6 +6,10 @@ public class WildDrawFour extends WildCard {
         super();
     }
 
+    public int drawValue() {
+        return 4;
+    }
+
     @Override
     public String symbol() {
         return "+4";
