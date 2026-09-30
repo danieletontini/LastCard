@@ -16,6 +16,7 @@ public class Game {
     private final Deck deck;
     private final DiscardPile discardPile;
     private int pendingDrawValue;
+    private boolean openingColorChoice;
 
 
     public Game(List<String> playerNames) {
@@ -40,6 +41,7 @@ public class Game {
         this.deck = DeckFactory.createClassic();
         this.discardPile = new DiscardPile();
         this.pendingDrawValue = 0;
+        this.openingColorChoice = false;
 
     }
 
@@ -58,12 +60,19 @@ public class Game {
                 .orElseThrow(() -> new IllegalStateException("No card is available to start the discard pile."));
         discardPile.discard(initialCard);
 
+        // TODO: Verify whether an initial +2/+4 makes the first player draw and skip their turn.
         if (initialCard.getColor() == CardColor.BLACK) {
             pendingDrawValue = initialCard.drawValue();
+            openingColorChoice = true;
             state = GameState.AWAITING_COLOR;
         } else {
             activeColor = initialCard.getColor();
             state = GameState.IN_PROGRESS;
+            initialCard.applyEffect(this);
+            if (initialCard.drawValue() > 0) {
+                drawCards(getCurrentPlayer(), initialCard.drawValue());
+                advanceTurn();
+            }
         }
     }
 
@@ -219,14 +228,24 @@ public class Game {
     private void executeColorChoice(ChooseColor move) {
         ensureAwaitingColor();
         requireCurrentPlayer(move.playerName());
+        boolean isOpeningChoice = openingColorChoice;
         setActiveColor(move.color());
 
         if (pendingDrawValue > 0) {
-            drawCards(getNextPlayer(), pendingDrawValue);
-            skipNext();
+            Player target = isOpeningChoice ? getCurrentPlayer() : getNextPlayer();
+            drawCards(target, pendingDrawValue);
+            if (isOpeningChoice) {
+                advanceTurn();
+            } else {
+                skipNext();
+                nextTurn();
+            }
             pendingDrawValue = 0;
         }
-        nextTurn();
+        if (!isOpeningChoice) {
+            nextTurn();
+        }
+        openingColorChoice = false;
     }
 
     private void executeCallUno(CallUno move) {
