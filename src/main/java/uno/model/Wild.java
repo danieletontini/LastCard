@@ -10,5 +10,9 @@ public class Wild extends WildCard {
     public String symbol() {
         return "WILD";
     }
-    //implementare applyEffect() per far passare allo stato AWAITING_COLOR e far cambiare il colore al giocatore successivo
+
+    @Override
+    public void applyEffect(Game game) {
+        game.awaitColorChoice();
+    }
 }

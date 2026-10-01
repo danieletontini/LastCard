@@ -6,6 +6,7 @@ public class WildDrawFour extends WildCard {
         super();
     }
 
+    @Override
     public int drawValue() {
         return 4;
     }
@@ -15,6 +16,10 @@ public class WildDrawFour extends WildCard {
         return "+4";
     }
 
-    //implementare applyEffect() per far pescare 4 carte al giocatore successivo
+    @Override
+    public void applyEffect(Game game) {
+        game.penalizeNext(drawValue());
+        game.awaitColorChoice();
+    }
 
 }

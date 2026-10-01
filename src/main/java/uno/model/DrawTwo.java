@@ -14,7 +14,9 @@ public class DrawTwo extends ActionCard {
     public int drawValue() {
         return 2;
     }
-    //implementare applyEffect() per far pescare 2 carte al giocatore successivo
-    
-    
+
+    @Override
+    public void applyEffect(Game game) {
+        game.penalizeNext(drawValue());
+    }
 }

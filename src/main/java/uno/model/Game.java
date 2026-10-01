@@ -15,8 +15,7 @@ public class Game {
     private CardColor activeColor;
     private final Deck deck;
     private final DiscardPile discardPile;
-    private int pendingDrawValue;
-    private boolean openingColorChoice;
+    private Player lastPlayer;
 
 
     public Game(List<String> playerNames) {
@@ -40,8 +39,7 @@ public class Game {
         this.activeColor = null;
         this.deck = DeckFactory.createClassic();
         this.discardPile = new DiscardPile();
-        this.pendingDrawValue = 0;
-        this.openingColorChoice = false;
+        this.lastPlayer = null;
 
     }
 
@@ -51,7 +49,6 @@ public class Game {
         }
 
         deck.shuffle();
-        this.currentIndex = 0;
         for (Player player : players) {
             drawCards(player, 7);
         }
@@ -60,20 +57,10 @@ public class Game {
                 .orElseThrow(() -> new IllegalStateException("No card is available to start the discard pile."));
         discardPile.discard(initialCard);
 
-        // TODO: Verify whether an initial +2/+4 makes the first player draw and skip their turn.
-        if (initialCard.getColor() == CardColor.BLACK) {
-            pendingDrawValue = initialCard.drawValue();
-            openingColorChoice = true;
-            state = GameState.AWAITING_COLOR;
-        } else {
-            activeColor = initialCard.getColor();
-            state = GameState.IN_PROGRESS;
-            initialCard.applyEffect(this);
-            if (initialCard.drawValue() > 0) {
-                drawCards(getCurrentPlayer(), initialCard.drawValue());
-                advanceTurn();
-            }
-        }
+        // La prima carta vale come giocata dal mazziere (l'ultimo giocatore): i suoi effetti colpiscono il primo.
+        this.currentIndex = players.size() - 1;
+        this.state = GameState.IN_PROGRESS;
+        resolveCard(getCurrentPlayer(), initialCard);
     }
 
     public GameState getState() {
@@ -210,42 +197,27 @@ public class Game {
             return;
         }
 
-        if (card.getColor() == CardColor.BLACK) {
-            pendingDrawValue = card.drawValue();
-            awaitColorChoice();
-            return;
-        }
+        resolveCard(player, card);
+    }
 
+    // L'effetto lo decide la carta; se non resta in attesa del colore, il turno passa normalmente.
+    private void resolveCard(Player player, Card card) {
         activeColor = card.getColor();
+        lastPlayer = player;
         card.applyEffect(this);
-        if (card.drawValue() > 0) {
-            drawCards(getNextPlayer(), card.drawValue());
-            skipNext();
+        if (state == GameState.IN_PROGRESS) {
+            nextTurn();
         }
-        nextTurn();
     }
 
     private void executeColorChoice(ChooseColor move) {
         ensureAwaitingColor();
-        requireCurrentPlayer(move.playerName());
-        boolean isOpeningChoice = openingColorChoice;
+        // Sceglie chi ha giocato il jolly: dopo un +4 il turno corrente è già passato a chi ha pescato.
+        if (!lastPlayer.getName().equals(move.playerName())) {
+            throw new IllegalArgumentException("It is not " + move.playerName() + "'s turn to choose the color.");
+        }
         setActiveColor(move.color());
-
-        if (pendingDrawValue > 0) {
-            Player target = isOpeningChoice ? getCurrentPlayer() : getNextPlayer();
-            drawCards(target, pendingDrawValue);
-            if (isOpeningChoice) {
-                advanceTurn();
-            } else {
-                skipNext();
-                nextTurn();
-            }
-            pendingDrawValue = 0;
-        }
-        if (!isOpeningChoice) {
-            nextTurn();
-        }
-        openingColorChoice = false;
+        nextTurn();
     }
 
     private void executeCallUno(CallUno move) {
@@ -304,6 +276,12 @@ public class Game {
     public void awaitColorChoice() {
         ensureInProgress();
         state = GameState.AWAITING_COLOR;
+    }
+
+    // Il prossimo giocatore pesca n carte e perde il turno. Con l'accumulo del No Mercy cambierà solo qui.
+    public void penalizeNext(int n) {
+        drawCards(getNextPlayer(), n);
+        skipNext();
     }
 
 }
