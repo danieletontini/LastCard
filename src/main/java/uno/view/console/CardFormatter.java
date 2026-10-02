@@ -32,6 +32,9 @@ public final class CardFormatter {
             "WILD", "Jolly",
             "+4", "Jolly +4");
 
+    public CardFormatter() {
+    }
+
     /** Per esempio [R 5] in rosso, [B Salta] in blu, [Jolly +4]. */
     public String format(Card card) {
         String label = LABELS.getOrDefault(card.symbol(), card.symbol());

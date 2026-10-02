@@ -7,7 +7,11 @@ import java.util.Objects;
 public class DiscardPile {
 
     /** La carta in cima è l'ultima della lista. */
-    private final List<Card> cards = new ArrayList<>();
+    private final List<Card> cards;
+
+    public DiscardPile() {
+        this.cards = new ArrayList<>();
+    }
 
     public void discard(Card card) {
         cards.add(Objects.requireNonNull(card, "card"));

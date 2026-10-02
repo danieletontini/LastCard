@@ -91,6 +91,21 @@ public class Game {
         return activeColor;
     }
 
+    public VisibleState getVisibleState() {
+        Player acting = getActingPlayer();
+        List<PlayerSummary> summaries = new ArrayList<>();
+        for (Player player : players) {
+            summaries.add(new PlayerSummary(player.getName(), player.getHand().size()));
+        }
+        Card top = discardPile.isEmpty() ? null : discardPile.top();
+        return new VisibleState(top, activeColor, acting.getName(), acting.getHand(), summaries, state);
+    }
+
+    // Durante la scelta del colore deve agire chi ha giocato il jolly, non il giocatore di turno (dopo un +4 sono diversi).
+    private Player getActingPlayer() {
+        return state == GameState.AWAITING_COLOR ? lastPlayer : getCurrentPlayer();
+    }
+
     //passa al giocatore successivo nel senso di marcia.
     public void nextTurn() {
         ensureInProgress();
