@@ -19,7 +19,7 @@ public class DiscardPile {
 
     public Card top() {
         if (cards.isEmpty()) {
-            throw new IllegalStateException("La pila degli scarti è vuota.");
+            throw new IllegalStateException("The discard pile is empty.");
         }
         return cards.get(cards.size() - 1);
     }

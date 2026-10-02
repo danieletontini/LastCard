@@ -8,7 +8,7 @@ public abstract class ActionCard extends Card {
         super(color);
         /*le carte non possono essere nere */
         if (color == CardColor.BLACK) {
-            throw new IllegalArgumentException("Una carta azione non può essere nera.");
+            throw new IllegalArgumentException("An action card cannot be BLACK.");
         }
         
     }

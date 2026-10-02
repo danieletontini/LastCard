@@ -7,10 +7,10 @@ public class NumberCard extends Card {
     public NumberCard(CardColor color, int number) {
         super(color);
         if (number < 0 || number > 9) {
-            throw new IllegalArgumentException("Il numero della carta deve essere compreso tra 0 e 9.");
+            throw new IllegalArgumentException("The card number must be between 0 and 9.");
         }
         if (color == CardColor.BLACK) {
-            throw new IllegalArgumentException("Una carta numero non può essere nera.");
+            throw new IllegalArgumentException("A number card cannot be BLACK.");
        }
 
         this.number = number;

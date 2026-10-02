@@ -25,7 +25,7 @@ public class Deck {
 
     public Card draw() {
         if (cards.isEmpty()) {
-            throw new IllegalStateException("Il mazzo è vuoto. Non ci sono carte da pescare.");
+            throw new IllegalStateException("The deck is empty: there are no cards to draw.");
         }
         return cards.remove(cards.size() - 1);
     }
