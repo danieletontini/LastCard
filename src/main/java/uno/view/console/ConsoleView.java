@@ -36,7 +36,16 @@ public class ConsoleView implements UnoView {
         System.out.println("Avversari: " + opponentsText(state));
         System.out.println("La tua mano: " + formatter.formatHand(state.currentHand()));
 
-        if (state.state() == GameState.IN_PROGRESS) {
+        if (state.state() != GameState.IN_PROGRESS) {
+            return;
+        }
+        if (state.canPass()) {
+            
+            int drawnIndex = state.currentHand().size() - 1;
+            System.out.println("Hai pescato " + formatter.format(state.currentHand().get(drawnIndex))
+                    + ": puoi giocarla o passare.");
+            System.out.println("Comandi: " + drawnIndex + " = gioca la carta pescata, s = passa, u = UNO");
+        } else {
             System.out.println("Comandi: numero = gioca la carta, p = pesca, u = UNO");
         }
     }
