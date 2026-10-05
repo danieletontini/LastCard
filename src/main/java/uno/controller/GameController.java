@@ -2,11 +2,14 @@ package uno.controller;
 
 import java.util.Objects;
 
+import uno.model.CallUno;
 import uno.model.CardColor;
+import uno.model.ChooseColor;
 import uno.model.Draw;
 import uno.model.Game;
 import uno.model.GameState;
 import uno.model.Move;
+import uno.model.Pass;
 import uno.model.PlayCard;
 import uno.model.VisibleState;
 import uno.view.UnoView;
@@ -31,35 +34,40 @@ public class GameController {
     
     public void onCardSelected(int index) {
         if (index < 0) {
-            view.showError("");
+            view.showError("Scegli una carta della tua mano.");
             return;
         }
-        perform(new PlayCard(actingPlayerName(), index), "Da implementare");
+        perform(new PlayCard(actingPlayerName(), index), "Non puoi giocare questa carta.");
     }
 
     /** Il giocatore pesca una carta. */
     public void onDraw() {
-        perform(new Draw(actingPlayerName()), "Da implementare");
+        perform(new Draw(actingPlayerName()), "Non puoi pescare adesso: hai già pescato in questo turno.");
     }
 
     /** Il giocatore tiene la carta appena pescata e passa il turno. */
     public void onPass() {
-        throw new UnsupportedOperationException("Da implementare.");
+        perform(new Pass(actingPlayerName()), "Puoi passare solo dopo aver pescato una carta giocabile.");
     }
 
     /** Il giocatore dichiara UNO. */
     public void onUnoCalled() {
-        throw new UnsupportedOperationException("Da implementare.");
+        perform(new CallUno(actingPlayerName()), "Puoi dichiarare UNO solo quando ti restano due carte o meno.");
     }
 
     /** Il giocatore sceglie il colore dopo aver giocato un jolly. */
     public void onColorChosen(CardColor color) {
-        throw new UnsupportedOperationException("Da implementare.");
+        // Il nero non è un colore che si può scegliere: ChooseColor lo rifiuterebbe già nel costruttore.
+        if (color == null || color == CardColor.BLACK) {
+            view.showError("Scegli un colore tra rosso, giallo, verde e blu.");
+            return;
+        }
+        perform(new ChooseColor(actingPlayerName(), color), "Non puoi scegliere il colore adesso.");
     }
 
     /** Serve al ciclo della vista console per sapere quando fermarsi. */
     public boolean isGameOver() {
-        throw new UnsupportedOperationException("Da implementare.");
+        return game.isFinished();
     }
 
     // Esegue la mossa; se il modello la rifiuta mostra il messaggio in italiano, altrimenti il nuovo stato.
