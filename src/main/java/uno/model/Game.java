@@ -20,8 +20,15 @@ public class Game {
     private Player lastPlayer;
     // Carta appena pescata dal giocatore di turno, se giocabile: può giocare solo questa o passare.
     private Card drawnCard;
+    private final boolean shuffleOnStart;
+    private final List<GameObserver> observers;
 
     public Game(List<String> playerNames) {
+        this(playerNames, DeckFactory.createClassic(), true);
+    }
+
+    // Per i test: un mazzo preparato a mano e, se shuffleOnStart è falso, pescato nell'ordine dato.
+    Game(List<String> playerNames, Deck deck, boolean shuffleOnStart) {
         Objects.requireNonNull(playerNames, "playerNames");
         if (playerNames.size() < 2 || playerNames.size() > 10) {
             throw new IllegalArgumentException("A game must have between 2 and 10 players.");
@@ -40,10 +47,26 @@ public class Game {
         this.direction = Direction.CLOCKWISE;
         this.state = GameState.NOT_STARTED;
         this.activeColor = null;
-        this.deck = DeckFactory.createClassic();
+        this.deck = Objects.requireNonNull(deck, "deck");
         this.discardPile = new DiscardPile();
         this.lastPlayer = null;
         this.drawnCard = null;
+        this.shuffleOnStart = shuffleOnStart;
+        this.observers = new ArrayList<>();
+    }
+
+    public void addObserver(GameObserver observer) {
+        observers.add(Objects.requireNonNull(observer, "observer"));
+    }
+
+    public void removeObserver(GameObserver observer) {
+        observers.remove(observer);
+    }
+
+    private void notifyObservers(GameEvent event) {
+        for (GameObserver observer : List.copyOf(observers)) {
+            observer.update(event);
+        }
     }
 
     public void start() {
@@ -51,7 +74,9 @@ public class Game {
             throw new IllegalStateException("The game has already started.");
         }
 
-        deck.shuffle();
+        if (shuffleOnStart) {
+            deck.shuffle();
+        }
         for (Player player : players) {
             drawCards(player, 7);
         }
@@ -64,6 +89,7 @@ public class Game {
         int dealerIndex = players.size() - 1;
         this.currentIndex = dealerIndex;
         this.state = GameState.IN_PROGRESS;
+        notifyObservers(GameEvent.gameStarted(initialCard));
         resolveCard(getCurrentPlayer(), initialCard);
 
         // Jolly iniziale: il colore lo sceglie il primo giocatore. Con un +4 il turno è già passato
@@ -126,6 +152,7 @@ public class Game {
     public void skipNext() {
         ensureInProgress();
         advanceTurn();
+        notifyObservers(GameEvent.playerSkipped(getCurrentPlayer().getName()));
     }
 
     // In due giocatori invertire non cambia l'ordine: per regola l'Inverti vale come Salta.
@@ -134,6 +161,7 @@ public class Game {
         direction = direction == Direction.CLOCKWISE
                 ? Direction.COUNTERCLOCKWISE
                 : Direction.CLOCKWISE;
+        notifyObservers(GameEvent.directionReversed());
         if (players.size() == 2) {
             skipNext();
         }
@@ -214,9 +242,11 @@ public class Game {
         player.removeCard(move.handIndex());
         drawnCard = null;
         discardPile.discard(card);
+        notifyObservers(GameEvent.cardPlayed(player.getName(), card));
 
         if (player.hasWon()) {
             state = GameState.FINISHED;
+            notifyObservers(GameEvent.gameWon(player.getName()));
             return;
         }
 
@@ -236,6 +266,7 @@ public class Game {
         }
 
         List<Card> drawn = drawCards(player, 1);
+        notifyObservers(GameEvent.cardsDrawn(player.getName(), drawn.size()));
         if (!drawn.isEmpty() && drawn.get(0).isPlayable(discardPile.top(), activeColor)) {
             drawnCard = drawn.get(0);
             return;
@@ -252,13 +283,15 @@ public class Game {
         }
         drawnCard = null;
         player.resetUnoCall();
+        notifyObservers(GameEvent.turnPassed(player.getName()));
         nextTurn();
     }
 
     // Il turno di chi ha giocato è finito: se è rimasto con una carta senza aver chiamato UNO, paga la penalità.
     private void endTurnAfterPlay(Player player) {
         if (player.getHand().size() == 1 && !player.hasCalledUno()) {
-            drawCards(player, UNO_PENALTY);
+            List<Card> penalty = drawCards(player, UNO_PENALTY);
+            notifyObservers(GameEvent.unoPenalty(player.getName(), penalty.size()));
         }
         player.resetUnoCall();
     }
@@ -280,6 +313,7 @@ public class Game {
             throw new IllegalArgumentException("It is not " + move.playerName() + "'s turn to choose the color.");
         }
         setActiveColor(move.color());
+        notifyObservers(GameEvent.colorChosen(lastPlayer.getName(), move.color()));
         nextTurn();
         endTurnAfterPlay(lastPlayer);
     }
@@ -297,6 +331,7 @@ public class Game {
             throw new IllegalStateException("UNO can only be called with two or fewer cards in hand.");
         }
         player.callUno();
+        notifyObservers(GameEvent.unoCalled(player.getName()));
     }
 
     private Player requireCurrentPlayer(String playerName) {
@@ -343,8 +378,15 @@ public class Game {
 
     // Il prossimo giocatore pesca n carte e perde il turno. Con l'accumulo del No Mercy cambierà solo qui.
     public void penalizeNext(int n) {
-        drawCards(getNextPlayer(), n);
+        Player next = getNextPlayer();
+        List<Card> drawn = drawCards(next, n);
+        notifyObservers(GameEvent.cardsDrawn(next.getName(), drawn.size()));
         skipNext();
     }
 
+    // Per i test: le carte in mani, mazzo e scarti. Deve restare costante per tutta la partita.
+    int totalCardCount() {
+        int inHands = players.stream().mapToInt(player -> player.getHand().size()).sum();
+        return inHands + deck.getCardCount() + discardPile.getCardCount();
+    }
 }
