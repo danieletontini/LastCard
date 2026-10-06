@@ -1,6 +1,7 @@
 package uno.controller;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import uno.model.CallUno;
 import uno.model.CardColor;
@@ -11,6 +12,7 @@ import uno.model.GameState;
 import uno.model.Move;
 import uno.model.Pass;
 import uno.model.PlayCard;
+import uno.model.Player;
 import uno.model.VisibleState;
 import uno.view.UnoView;
 
@@ -84,7 +86,10 @@ public class GameController {
     // Dopo ogni mossa: vincitore, oppure il nuovo stato e, dopo un jolly, la scelta del colore.
     private void showOutcome() {
         if (game.isFinished()) {
-            game.getWinner().ifPresent(winner -> view.showWinner(winner.getName()));
+            Optional<Player> winner = game.getWinner();
+            if (winner.isPresent()) {
+                view.showWinner(winner.get().getName());
+            }
             return;
         }
         VisibleState state = game.getVisibleState();

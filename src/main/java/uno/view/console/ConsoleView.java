@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
+import uno.controller.GameController;
 import uno.model.CardColor;
 import uno.model.GameState;
 import uno.model.PlayerSummary;
@@ -23,6 +24,42 @@ public class ConsoleView implements UnoView {
     public ConsoleView(CardFormatter formatter, Scanner in) {
         this.formatter = Objects.requireNonNull(formatter, "formatter");
         this.in = Objects.requireNonNull(in, "in");
+    }
+
+    /**
+     * Avvia la partita e legge i comandi da tastiera finché non c'è un vincitore.
+     * Il controller arriva qui e non nel costruttore, perché il controller ha già bisogno della vista per nascere.
+     */
+    public void run(GameController controller) {
+        Objects.requireNonNull(controller, "controller");
+        controller.start();
+        while (!controller.isGameOver()) {
+            System.out.print("> ");
+            if (!in.hasNextLine()) {
+                return;     // input chiuso (Ctrl+D): si esce senza errori
+            }
+            String command = in.nextLine().trim().toLowerCase();
+            if (!command.isEmpty()) {
+                handleCommand(command, controller);
+            }
+        }
+    }
+
+    // Traduce un comando in un'azione del controller: numero = gioca, d = pesca, k = passa, u = UNO.
+    private void handleCommand(String command, GameController controller) {
+        if (command.equals("d")) {
+            controller.onDraw();
+        } else if (command.equals("k")) {
+            controller.onPass();
+        } else if (command.equals("u")) {
+            controller.onUnoCalled();
+        } else {
+            try {
+                controller.onCardSelected(Integer.parseInt(command));
+            } catch (NumberFormatException e) {
+                showError("Comando non riconosciuto. Usa un numero, d, k oppure u.");
+            }
+        }
     }
 
     @Override
@@ -44,9 +81,9 @@ public class ConsoleView implements UnoView {
             int drawnIndex = state.currentHand().size() - 1;
             System.out.println("Hai pescato " + formatter.format(state.currentHand().get(drawnIndex))
                     + ": puoi giocarla o passare.");
-            System.out.println("Comandi: " + drawnIndex + " = gioca la carta pescata, s = passa, u = UNO");
+            System.out.println("Comandi: " + drawnIndex + " = gioca la carta pescata, k = passa, u = UNO");
         } else {
-            System.out.println("Comandi: numero = gioca la carta, p = pesca, u = UNO");
+            System.out.println("Comandi: numero = gioca la carta, d = pesca, u = UNO");
         }
     }
 
