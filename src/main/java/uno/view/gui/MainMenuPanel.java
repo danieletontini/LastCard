@@ -12,25 +12,31 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-/** Il menu principale: Gioca, Regole, Opzioni, Esci. Per ora funziona solo Esci. */
+/** Il menu principale: Gioca, Regole, Opzioni, Esci. Per ora funzionano Regole ed Esci. */
 public class MainMenuPanel extends JPanel {
 
-    public MainMenuPanel() {
+    public MainMenuPanel(final Navigator navigator) {
         // GridBagLayout senza vincoli tiene la colonna dei pulsanti al centro della finestra.
         super(new GridBagLayout());
 
         JPanel column = new JPanel(new GridLayout(0, 1, 0, 10));
         column.add(new JLabel("UNO", SwingConstants.CENTER));
 
-        JButton play = new JButton("Gioca");
-        JButton rules = new JButton("Regole");
-        JButton options = new JButton("Opzioni");
-        JButton exit = new JButton("Esci");
+        JButton play = ButtonFactory.createButton("Gioca");
+        JButton rules = ButtonFactory.createButton("Regole");
+        JButton options = ButtonFactory.createButton("Opzioni");
+        JButton exit = ButtonFactory.createButton("Esci");
 
-        // Le schermate di Gioca, Regole e Opzioni non esistono ancora.
+        // Le schermate di Gioca e Opzioni non esistono ancora.
         play.setEnabled(false);
-        rules.setEnabled(false);
         options.setEnabled(false);
+
+        rules.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navigator.show(Screen.RULES);
+            }
+        });
 
         exit.addActionListener(new ActionListener() {
             @Override
