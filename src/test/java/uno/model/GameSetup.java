@@ -28,8 +28,13 @@ final class GameSetup {
         return hand;
     }
 
-    /** Partita non ancora avviata, per poter registrare un observer prima di start(). */
+    /** Partita non ancora avviata, per poter registrare un observer prima di start(). Si pescano riempitivi. */
     static Game create(List<String> names, List<List<Card>> hands, Card firstCard) {
+        return create(names, hands, firstCard, Collections.nCopies(DRAW_PILE_SIZE, FILLER));
+    }
+
+    /** Come sopra, ma le carte da pescare dopo la distribuzione sono esattamente drawPile (anche nessuna). */
+    static Game create(List<String> names, List<List<Card>> hands, Card firstCard, List<Card> drawPile) {
         List<Card> drawOrder = new ArrayList<>();
         for (List<Card> hand : hands) {
             if (hand.size() != HAND_SIZE) {
@@ -38,9 +43,7 @@ final class GameSetup {
             drawOrder.addAll(hand);
         }
         drawOrder.add(firstCard);
-        for (int i = 0; i < DRAW_PILE_SIZE; i++) {
-            drawOrder.add(FILLER);
-        }
+        drawOrder.addAll(drawPile);
         // Deck pesca dalla fine della lista: va rovesciata perché la prima carta pescata sia la prima della lista.
         Collections.reverse(drawOrder);
         return new Game(names, new Deck(drawOrder), false);
@@ -52,12 +55,31 @@ final class GameSetup {
         return game;
     }
 
-    static int handSize(Game game, String name) {
+    static Game start(List<String> names, List<List<Card>> hands, Card firstCard, List<Card> drawPile) {
+        Game game = create(names, hands, firstCard, drawPile);
+        game.start();
+        return game;
+    }
+
+    static Player player(Game game, String name) {
         return game.getPlayers().stream()
                 .filter(player -> player.getName().equals(name))
                 .findFirst()
-                .orElseThrow()
-                .getHand()
-                .size();
+                .orElseThrow();
+    }
+
+    static int handSize(Game game, String name) {
+        return player(game, name).getHand().size();
+    }
+
+    /**
+     * Toglie carte dalla fine della mano finché ne restano size: serve per le situazioni con poche carte,
+     * perché start() ne distribuisce sempre 7. Le carte tolte escono dal gioco, quindi dopo non vale l'invariante.
+     */
+    static void trimHand(Game game, String name, int size) {
+        Player player = player(game, name);
+        while (player.getHand().size() > size) {
+            player.removeCard(player.getHand().size() - 1);
+        }
     }
 }
