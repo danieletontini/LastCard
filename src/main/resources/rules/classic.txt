@@ -1,0 +1,28 @@
+UNO CLASSICO
+
+SCOPO
+Liberarsi per primi di tutte le carte.
+
+INIZIO
+Ognuno riceve 7 carte; la prima carta del mazzo, scoperta, avvia la pila degli scarti.
+
+IL TURNO
+Si gioca una carta con lo stesso colore, numero o simbolo di quella in cima, oppure un jolly.
+Chi non può giocare pesca una carta.
+
+UNO!
+Quando ti resta una sola carta devi dichiararlo; se un avversario ti scopre prima, peschi due carte di penalità.
+
+CARTE SPECIALI
+- Pesca 2: il giocatore successivo pesca due carte e salta il turno.
+- Inverti: cambia il senso di gioco. In due giocatori vale come salta turno.
+- Salta turno: il giocatore successivo salta il turno.
+- Jolly: chi lo gioca sceglie il colore.
+- Jolly Pesca 4: chi lo gioca sceglie il colore; il successivo pesca quattro carte e salta il turno.
+
+PARTITA A PUNTI
+Chi chiude la mano incassa il valore delle carte rimaste agli avversari.
+- Numeri: il loro valore.
+- Pesca 2, Inverti, Salta turno: 20 punti.
+- Jolly e Jolly Pesca 4: 50 punti.
+Vince chi raggiunge per primo l'obiettivo (100 o 500 punti).

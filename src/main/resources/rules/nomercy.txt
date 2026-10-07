@@ -1,0 +1,34 @@
+UNO NO MERCY
+
+IL MAZZO
+Il mazzo ha 168 carte: alle carte classiche si aggiungono carte pesca più pesanti e nuove carte azione.
+
+ACCUMULO
+A una carta pesca si può rispondere con un'altra carta pesca di valore uguale o superiore;
+la penalità si somma e passa al giocatore successivo, finché qualcuno non può rispondere e pesca il totale.
+
+PESCA OBBLIGATA
+Chi non può giocare pesca finché non trova una carta giocabile.
+
+SCAMBIO 7
+Giocando un 7 scambi la tua mano con quella di un giocatore a scelta.
+
+ROTAZIONE 0
+Giocando uno 0 tutti passano la propria mano al giocatore successivo nel senso di gioco.
+
+SENZA PIETÀ
+Chi arriva ad avere 25 o più carte in mano è eliminato.
+
+CARTE NUOVE
+- Salta tutti: tutti gli altri giocatori saltano il turno, e tocca di nuovo a chi l'ha giocata.
+- Scarta tutto: chi la gioca scarta insieme a lei tutte le carte dello stesso colore che ha in mano.
+- Pesca 4 colorato: il giocatore successivo pesca quattro carte e salta il turno.
+- Jolly Pesca 6: chi lo gioca sceglie il colore; il successivo pesca sei carte e salta il turno.
+- Jolly Pesca 10: chi lo gioca sceglie il colore; il successivo pesca dieci carte e salta il turno.
+- Jolly Cambia Giro Pesca 4: chi lo gioca sceglie il colore e inverte il senso di gioco;
+  il nuovo giocatore successivo pesca quattro carte e salta il turno.
+- Jolly Roulette Colore: il giocatore successivo sceglie un colore e scopre carte dal mazzo
+  finché non esce quel colore; tiene tutte le carte scoperte.
+
+PUNTEGGIO
+Numeri al loro valore, carte azione colorate 20 punti, jolly 50.
