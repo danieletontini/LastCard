@@ -9,7 +9,7 @@ public class MainWindow extends JFrame {
     private static final int HEIGHT = 640;
 
     public MainWindow() {
-        super("UNO");
+        super("Ultima Carta");
         Navigator navigator = new Navigator();
         navigator.register(Screen.MAIN_MENU, new MainMenuPanel(navigator));
         navigator.register(Screen.RULES, new RulesPanel(navigator));

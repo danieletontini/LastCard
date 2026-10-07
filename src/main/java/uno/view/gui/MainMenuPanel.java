@@ -20,7 +20,7 @@ public class MainMenuPanel extends JPanel {
         super(new GridBagLayout());
 
         JPanel column = new JPanel(new GridLayout(0, 1, 0, 10));
-        column.add(new JLabel("UNO", SwingConstants.CENTER));
+        column.add(new JLabel("Ultima Carta", SwingConstants.CENTER));
 
         JButton play = ButtonFactory.createButton("Gioca");
         JButton rules = ButtonFactory.createButton("Regole");
