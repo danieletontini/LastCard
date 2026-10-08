@@ -4,4 +4,5 @@ package lastcard.view.gui;
 public enum Screen {
     MAIN_MENU,
     RULES,
+    OPTIONS,
 }
