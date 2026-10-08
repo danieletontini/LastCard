@@ -9,6 +9,7 @@ import java.util.Optional;
 /**
  * Strategia base: gioca sempre se può, tiene i jolly per ultimi e tra le altre carte
  * si libera prima di quelle che valgono più punti. Dopo un jolly dichiara il colore che ha di più.
+ * Con lo scambio 7 prende la mano dell'avversario che ha meno carte.
  */
 public class BasicCpuStrategy implements CpuStrategy {
 
@@ -42,5 +43,14 @@ public class BasicCpuStrategy implements CpuStrategy {
             }
         }
         return best;
+    }
+
+    // Scambia con chi ha meno carte: è lo scambio che conviene di più.
+    @Override
+    public String chooseSwapTarget(List<PlayerSummary> opponents) {
+        return opponents.stream()
+                .min(Comparator.comparingInt(PlayerSummary::cardCount))
+                .orElseThrow(() -> new IllegalArgumentException("There is no opponent to swap hands with."))
+                .name();
     }
 }

@@ -8,11 +8,25 @@ public class Player {
     private final String name;
     private final List<Card> hand;
     private boolean unoCalled;
+    // No Mercy: chi arriva alla soglia di carte esce dalla mano.
+    private boolean eliminated;
+    // Partita a punti: i punti presi chiudendo le mani.
+    private int score;
 
     public Player(String name) {
         this.name = Objects.requireNonNull(name, "name");
         this.hand = new ArrayList<>();
         this.unoCalled = false;
+        this.eliminated = false;
+        this.score = 0;
+    }
+
+    public boolean isEliminated() {
+        return eliminated;
+    }
+
+    public int getScore() {
+        return score;
     }
 
     public String getName() {

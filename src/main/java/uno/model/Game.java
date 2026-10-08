@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 public class Game {
@@ -21,6 +22,8 @@ public class Game {
     private Player lastPlayer;
     // Carta appena pescata dal giocatore di turno, se giocabile: può giocare solo questa o passare.
     private Card drawnCard;
+    // No Mercy: penalità accumulata che il giocatore di turno deve rilanciare o pescare; 0 se nessuna.
+    private int pendingDraw;
     private final boolean shuffleOnStart;
     private final List<GameObserver> observers;
 
@@ -31,7 +34,13 @@ public class Game {
 
     /** Partita con le regole date: il mazzo è quello indicato da rules.deck(). */
     public Game(List<String> playerNames, GameRules rules) {
-        this(playerNames, Objects.requireNonNull(rules, "rules"), DeckFactory.create(rules), true);
+        this(playerNames, rules, new Random());
+    }
+
+    /** Con lo stesso Random (per esempio new Random(42)) la partita si ripete identica: serve a test e replay. */
+    public Game(List<String> playerNames, GameRules rules, Random random) {
+        this(playerNames, Objects.requireNonNull(rules, "rules"),
+                DeckFactory.create(rules, Objects.requireNonNull(random, "random")), true);
     }
 
     // Per i test: regole classiche, un mazzo preparato a mano e, se shuffleOnStart è falso, pescato nell'ordine dato.
@@ -64,6 +73,7 @@ public class Game {
         this.discardPile = new DiscardPile();
         this.lastPlayer = null;
         this.drawnCard = null;
+        this.pendingDraw = 0;
         this.shuffleOnStart = shuffleOnStart;
         this.observers = new ArrayList<>();
     }
@@ -148,15 +158,21 @@ public class Game {
         Player acting = getActingPlayer();
         List<PlayerSummary> summaries = new ArrayList<>();
         for (Player player : players) {
-            summaries.add(new PlayerSummary(player.getName(), player.getHand().size()));
+            summaries.add(new PlayerSummary(player.getName(), player.getHand().size(),
+                    player.isEliminated(), player.getScore()));
         }
         Card top = discardPile.isEmpty() ? null : discardPile.top();
-        return new VisibleState(top, activeColor, acting.getName(), acting.getHand(), summaries, state, drawnCard != null);
+        return new VisibleState(top, activeColor, acting.getName(), acting.getHand(), summaries, state,
+                drawnCard != null, pendingDraw);
     }
 
-    // Durante la scelta del colore deve agire chi ha giocato il jolly, non il giocatore di turno (dopo un +4 sono diversi).
+    // Durante la scelta del colore o del bersaglio dello scambio deve agire chi ha giocato la carta,
+    // non il giocatore di turno (dopo un +4 sono diversi).
     private Player getActingPlayer() {
-        return state == GameState.AWAITING_COLOR ? lastPlayer : getCurrentPlayer();
+        if (state == GameState.AWAITING_COLOR || state == GameState.AWAITING_SWAP_TARGET) {
+            return lastPlayer;
+        }
+        return getCurrentPlayer();
     }
 
     //passa al giocatore successivo nel senso di marcia.
@@ -259,7 +275,13 @@ public class Game {
             case Pass pass -> executePass(pass);
             case CallUno callUno -> executeCallUno(callUno);
             case ChooseColor chooseColor -> executeColorChoice(chooseColor);
+            case SwapHands swapHands -> executeSwapHands(swapHands);
         }
+    }
+
+    // No Mercy, scambio 7: si scrive insieme alla regola.
+    private void executeSwapHands(SwapHands move) {
+        throw new UnsupportedOperationException("SwapHands is not implemented yet.");
     }
 
     private void executePlayCard(PlayCard move) {

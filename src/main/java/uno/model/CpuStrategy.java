@@ -11,4 +11,7 @@ public interface CpuStrategy {
 
     /** Il colore da dichiarare dopo un jolly, mai BLACK. */
     CardColor chooseColor(List<Card> hand);
+
+    /** No Mercy, scambio 7: il nome dell'avversario con cui scambiare la mano, scelto tra opponents (mai vuota). */
+    String chooseSwapTarget(List<PlayerSummary> opponents);
 }

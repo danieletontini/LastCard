@@ -1,6 +1,7 @@
 package uno.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,7 +9,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -18,6 +21,32 @@ class FullGameTest {
     private static final int GAMES = 200;
     private static final int CLASSIC_DECK_SIZE = 108;
     private static final int MAX_MOVES = 10_000;
+
+    @Test
+    void theSameSeedReplaysTheSameGame() {
+        List<String> names = List.of("CPU1", "CPU2", "CPU3");
+        assertEquals(playAndRecord(names, 42), playAndRecord(names, 42));
+        assertNotEquals(playAndRecord(names, 42), playAndRecord(names, 43));
+    }
+
+    // Gioca una partita CPU con il seme dato e restituisce tutti gli eventi.
+    private static List<GameEvent> playAndRecord(List<String> names, long seed) {
+        Map<String, CpuPlayer> cpus = new HashMap<>();
+        for (String name : names) {
+            cpus.put(name, new CpuPlayer(name, new BasicCpuStrategy()));
+        }
+        Game game = new Game(names, GameRules.classic(), new Random(seed));
+        List<GameEvent> events = new ArrayList<>();
+        game.addObserver(events::add);
+        game.start();
+        while (!game.isFinished()) {
+            VisibleState state = game.getVisibleState();
+            for (Move move : cpus.get(state.currentPlayerName()).decide(state)) {
+                game.execute(move);
+            }
+        }
+        return events;
+    }
 
     @ParameterizedTest
     @ValueSource(ints = {2, 3, 4, 10})

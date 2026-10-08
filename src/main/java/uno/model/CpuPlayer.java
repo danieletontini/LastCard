@@ -35,8 +35,12 @@ public class CpuPlayer {
         }
 
         List<Card> hand = state.currentHand();
-        if (state.state() == GameState.AWAITING_COLOR) {
+        // Dopo un proprio jolly, o dopo la Roulette di chi precede: in entrambi i casi si dichiara un colore.
+        if (state.state() == GameState.AWAITING_COLOR || state.state() == GameState.AWAITING_ROULETTE_COLOR) {
             return List.of(new ChooseColor(name, strategy.chooseColor(hand)));
+        }
+        if (state.state() == GameState.AWAITING_SWAP_TARGET) {
+            return List.of(new SwapHands(name, strategy.chooseSwapTarget(opponents(state))));
         }
         if (state.state() != GameState.IN_PROGRESS) {
             throw new IllegalStateException("The game is not in progress.");
@@ -57,6 +61,17 @@ public class CpuPlayer {
         int index = state.canPass() ? drawnIndex : hand.indexOf(choice.get());
         Move play = new PlayCard(name, index);
         return hand.size() == 2 ? List.of(new CallUno(name), play) : List.of(play);
+    }
+
+    // Gli avversari ancora in gioco: con loro si può scambiare la mano.
+    private List<PlayerSummary> opponents(VisibleState state) {
+        List<PlayerSummary> opponents = new ArrayList<>();
+        for (PlayerSummary player : state.players()) {
+            if (!player.name().equals(name) && !player.eliminated()) {
+                opponents.add(player);
+            }
+        }
+        return opponents;
     }
 
     private static List<Card> playableCards(VisibleState state) {
