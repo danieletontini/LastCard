@@ -10,8 +10,8 @@ IL TURNO
 Si gioca una carta con lo stesso colore, numero o simbolo di quella in cima, oppure un jolly.
 Chi non può giocare pesca una carta, se la carta pescata è giocabile, si può usare subito.
 
-UNO!
-Quando ti resta una sola carta devi dichiararlo; se non lo fai prima della fine del tuo turno, peschi due carte di penalità.
+ULTIMA!
+Quando ti resta una sola carta devi dichiarare "Ultima!"; se non lo fai prima della fine del tuo turno, peschi due carte di penalità.
 
 CARTE SPECIALI
 - Pesca 2: il giocatore successivo pesca due carte e salta il turno.
