@@ -10,6 +10,7 @@ import java.util.Set;
 public class Game {
     private static final int UNO_PENALTY = 2;
 
+    private final GameRules rules;
     private final List<Player> players;
     private int currentIndex;
     private Direction direction;
@@ -23,12 +24,23 @@ public class Game {
     private final boolean shuffleOnStart;
     private final List<GameObserver> observers;
 
+    /** Partita con le regole classiche. */
     public Game(List<String> playerNames) {
-        this(playerNames, DeckFactory.createClassic(), true);
+        this(playerNames, GameRules.classic());
     }
 
-    // Per i test: un mazzo preparato a mano e, se shuffleOnStart è falso, pescato nell'ordine dato.
+    /** Partita con le regole date: il mazzo è quello indicato da rules.deck(). */
+    public Game(List<String> playerNames, GameRules rules) {
+        this(playerNames, Objects.requireNonNull(rules, "rules"), DeckFactory.create(rules), true);
+    }
+
+    // Per i test: regole classiche, un mazzo preparato a mano e, se shuffleOnStart è falso, pescato nell'ordine dato.
     Game(List<String> playerNames, Deck deck, boolean shuffleOnStart) {
+        this(playerNames, GameRules.classic(), deck, shuffleOnStart);
+    }
+
+    // Per i test: come sopra, con regole a scelta.
+    Game(List<String> playerNames, GameRules rules, Deck deck, boolean shuffleOnStart) {
         Objects.requireNonNull(playerNames, "playerNames");
         if (playerNames.size() < 2 || playerNames.size() > 10) {
             throw new IllegalArgumentException("A game must have between 2 and 10 players.");
@@ -43,6 +55,7 @@ public class Game {
             this.players.add(new Player(name));
         }
 
+        this.rules = Objects.requireNonNull(rules, "rules");
         this.currentIndex = 0;
         this.direction = Direction.CLOCKWISE;
         this.state = GameState.NOT_STARTED;
@@ -103,6 +116,10 @@ public class Game {
         return state;
     }
 
+    public GameRules getRules() {
+        return rules;
+    }
+
     public int getCurrentIndex() {
         return currentIndex;
     }
@@ -155,16 +172,38 @@ public class Game {
         notifyObservers(GameEvent.playerSkipped(getCurrentPlayer().getName()));
     }
 
-    // In due giocatori invertire non cambia l'ordine: per regola l'Inverti vale come Salta.
+    // L'effetto della carta Inverti: in due giocatori invertire non cambia l'ordine, quindi per regola vale come Salta.
     public void reverseDirection() {
+        flipDirection();
+        if (players.size() == 2) {
+            skipNext();
+        }
+    }
+
+    // Inverte soltanto il senso di gioco, anche in due giocatori. Serve alle carte che invertono e poi
+    // fanno pescare il nuovo successivo (Jolly Cambia Giro Pesca 4): con il salto di reverseDirection
+    // la penalità finirebbe a chi ha giocato la carta.
+    public void flipDirection() {
         ensureInProgress();
         direction = direction == Direction.CLOCKWISE
                 ? Direction.COUNTERCLOCKWISE
                 : Direction.CLOCKWISE;
         notifyObservers(GameEvent.directionReversed());
-        if (players.size() == 2) {
-            skipNext();
-        }
+    }
+
+    // No Mercy, Salta Tutti: tutti gli altri saltano il turno e tocca di nuovo a chi l'ha giocata.
+    public void skipAll() {
+        throw new UnsupportedOperationException("skipAll is not implemented yet.");
+    }
+
+    // No Mercy, Scarta Tutto: chi l'ha giocata scarta anche tutte le carte di quel colore che ha in mano.
+    public void discardAllOfColor(CardColor color) {
+        throw new UnsupportedOperationException("discardAllOfColor is not implemented yet.");
+    }
+
+    // No Mercy, Jolly Roulette Colore: il successivo sceglie un colore, scopre carte finché esce, le tiene e salta il turno.
+    public void startColorRoulette() {
+        throw new UnsupportedOperationException("startColorRoulette is not implemented yet.");
     }
 
     public void setActiveColor(CardColor color) {

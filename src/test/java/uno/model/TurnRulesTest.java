@@ -130,6 +130,24 @@ class TurnRulesTest {
     }
 
     @Test
+    void flipDirectionWithTwoPlayersLetsThePenaltyHitTheOpponent() {
+        // La sequenza del Jolly Cambia Giro Pesca 4: con reverseDirection la penalità tornerebbe a chi gioca.
+        Game game = GameSetup.start(TWO, List.of(hand(), hand()), RED_FIVE);
+
+        game.flipDirection();
+        game.penalizeNext(4);
+
+        assertEquals(Direction.COUNTERCLOCKWISE, game.getDirection());
+        assertEquals(11, handSize(game, "B"));
+        assertEquals(7, handSize(game, "A"));
+    }
+
+    @Test
+    void aGameWithoutExplicitRulesUsesTheClassicOnes() {
+        assertEquals(GameRules.classic(), new Game(TWO).getRules());
+    }
+
+    @Test
     void fillerCardsAreNeverPlayableOnRed() {
         // Garanzia per gli altri test: i riempitivi non cambiano lo scenario.
         assertEquals(false, FILLER.isPlayable(RED_FIVE, CardColor.RED));
