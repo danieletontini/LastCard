@@ -2,6 +2,7 @@ package uno.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public final class DeckFactory {
 
@@ -10,19 +11,32 @@ public final class DeckFactory {
 
     /** Il mazzo indicato dalle regole. La scelta è sul tipo di mazzo, non sul tipo di carta. */
     public static Deck create(GameRules rules) {
+        return create(rules, new Random());
+    }
+
+    /** Come sopra, con il Random che il mazzo userà per mescolare. */
+    public static Deck create(GameRules rules, Random random) {
         if (rules.deck() == DeckType.NO_MERCY) {
-            return createNoMercy();
+            return createNoMercy(random);
         }
-        return createClassic();
+        return createClassic(random);
     }
 
     // Mazzo No Mercy da 168 carte: si scrive quando ci sono le carte nuove.
     public static Deck createNoMercy() {
+        return createNoMercy(new Random());
+    }
+
+    public static Deck createNoMercy(Random random) {
         throw new UnsupportedOperationException("Il mazzo No Mercy non è ancora implementato.");
     }
 
     // Mazzo classico da 108 carte
     public static Deck createClassic() {
+        return createClassic(new Random());
+    }
+
+    public static Deck createClassic(Random random) {
         List<Card> cards = new ArrayList<>();
 
         for (CardColor color : CardColor.values()) {
@@ -45,6 +59,6 @@ public final class DeckFactory {
             cards.add(new WildDrawFour());
         }
 
-        return new Deck(cards);
+        return new Deck(cards, random);
     }
 }

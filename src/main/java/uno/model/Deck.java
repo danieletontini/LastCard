@@ -3,6 +3,7 @@ package uno.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class Deck {
@@ -11,8 +12,13 @@ public class Deck {
     private final Random random;
 
     public Deck(List<Card> cards) {
+        this(cards, new Random());
+    }
+
+    // Con un Random dato da fuori (per esempio con un seme fisso) i mescolamenti si ripetono uguali: partite riproducibili.
+    public Deck(List<Card> cards, Random random) {
         this.cards = new ArrayList<>(cards);
-        this.random = new Random();
+        this.random = Objects.requireNonNull(random, "random");
     }
 
     public List<Card> getCards() {
