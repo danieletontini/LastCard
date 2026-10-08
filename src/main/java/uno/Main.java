@@ -44,6 +44,8 @@ public class Main {
                 new CpuPlayer("CPU 1", new BasicCpuStrategy()),
                 new CpuPlayer("CPU 2", new BasicCpuStrategy()));
 
+        // La vista va registrata prima di avviare la partita, per ricevere anche la prima carta scoperta.
+        game.addObserver(view);
         GameController controller = new GameController(game, view, cpus);
         view.run(controller);
     }
