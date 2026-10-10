@@ -26,4 +26,8 @@ public class NumberCard extends Card {
         return number;
     }
 
+    @Override
+    public CardFace face() {
+        return new CardFace(getColor(), FaceSymbol.NUMBER, String.valueOf(number));
+    }
 }

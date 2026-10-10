@@ -15,4 +15,9 @@ public class Wild extends WildCard {
     public void applyEffect(Game game) {
         game.awaitColorChoice();
     }
+
+    @Override
+    public CardFace face() {
+        return CardFace.of(CardColor.BLACK, FaceSymbol.WILD);
+    }
 }

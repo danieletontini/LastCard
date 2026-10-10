@@ -16,6 +16,9 @@ public abstract class Card {
 
     public abstract String symbol();
 
+    /** Come va disegnata la carta: la vista legge solo questo, mai il tipo concreto. */
+    public abstract CardFace face();
+
     public abstract int points();
 
     /** Giocabile se ha il colore attivo o lo stesso simbolo della carta in cima. I jolly la ridefiniscono. */

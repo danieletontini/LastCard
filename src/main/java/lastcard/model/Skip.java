@@ -14,5 +14,9 @@ public class Skip extends ActionCard {
     public void applyEffect(Game game){
         game.skipNext();
     }
-    
+
+    @Override
+    public CardFace face() {
+        return CardFace.of(getColor(), FaceSymbol.SKIP);
+    }
 }

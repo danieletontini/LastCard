@@ -16,4 +16,8 @@ public class Reverse extends ActionCard {
         game.reverseDirection();
     }
 
+    @Override
+    public CardFace face() {
+        return CardFace.of(getColor(), FaceSymbol.REVERSE);
+    }
 }

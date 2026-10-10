@@ -22,4 +22,8 @@ public class WildDrawFour extends WildCard {
         game.awaitColorChoice();
     }
 
+    @Override
+    public CardFace face() {
+        return new CardFace(CardColor.BLACK, FaceSymbol.WILD_DRAW_FOUR, "+4");
+    }
 }
