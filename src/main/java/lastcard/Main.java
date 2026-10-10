@@ -9,9 +9,12 @@ import lastcard.controller.GameController;
 import lastcard.model.BasicCpuStrategy;
 import lastcard.model.CpuPlayer;
 import lastcard.model.Game;
+import lastcard.view.audio.AudioPlayer;
+import lastcard.view.audio.GameSounds;
 import lastcard.view.console.CardFormatter;
 import lastcard.view.console.ConsoleView;
 import lastcard.view.gui.MainWindow;
+import lastcard.view.gui.Settings;
 
 public class Main {
 
@@ -46,6 +49,10 @@ public class Main {
 
         // La vista va registrata prima di avviare la partita, per ricevere anche la prima carta scoperta.
         game.addObserver(view);
+        // I suoni della partita sono un altro observer: la console e il modello non sanno che esiste l'audio.
+        AudioPlayer audio = new AudioPlayer();
+        audio.setVolume(new Settings().effectiveVolume());
+        game.addObserver(new GameSounds(audio::play));
         GameController controller = new GameController(game, view, cpus);
         view.run(controller);
     }
