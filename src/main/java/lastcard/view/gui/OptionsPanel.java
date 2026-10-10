@@ -15,6 +15,8 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import lastcard.view.audio.AudioPlayer;
+
 /** Le opzioni dello schermo e dell'audio: schermo intero, muto e volume. Con il muto attivo lo slider non si usa. */
 public class OptionsPanel extends JPanel {
 
@@ -22,7 +24,8 @@ public class OptionsPanel extends JPanel {
     private final JSlider volume;
     private final JLabel volumeLabel;
 
-    public OptionsPanel(final Navigator navigator, final Settings settings, final MainWindow window) {
+    public OptionsPanel(final Navigator navigator, final Settings settings, final MainWindow window,
+            final AudioPlayer audio) {
         super(new BorderLayout());
         this.settings = settings;
 
@@ -57,7 +60,9 @@ public class OptionsPanel extends JPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 updateVolumeLabel();
-                // Si salva quando il cursore viene lasciato, non a ogni pixel del trascinamento.
+                // Il volume cambia subito mentre si trascina, così la musica fa sentire la differenza;
+                // si salva quando il cursore viene lasciato, non a ogni pixel del trascinamento.
+                audio.setVolume(volume.getValue());
                 if (!volume.getValueIsAdjusting()) {
                     settings.setVolume(volume.getValue());
                 }
@@ -67,6 +72,7 @@ public class OptionsPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 settings.setMuted(mute.isSelected());
+                audio.setVolume(settings.effectiveVolume());
                 updateVolumeEnabled();
             }
         });
