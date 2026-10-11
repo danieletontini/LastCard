@@ -1,5 +1,6 @@
 package lastcard.view.gui;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,15 +8,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import lastcard.model.Card;
 import lastcard.model.CardColor;
 import lastcard.model.CardFace;
-import lastcard.model.Card;
+import lastcard.model.ColorDrawFour;
 import lastcard.model.DeckFactory;
+import lastcard.model.DiscardAll;
 import lastcard.model.FaceSymbol;
 import lastcard.model.NumberCard;
+import lastcard.model.SkipEveryone;
+import lastcard.model.WildColorRoulette;
+import lastcard.model.WildDrawSix;
+import lastcard.model.WildDrawTen;
+import lastcard.model.WildReverseDrawFour;
 
 class CardImageCacheTest {
 
@@ -69,13 +78,30 @@ class CardImageCacheTest {
     }
 
     @Test
-    void aSymbolWithoutDrawingIsRejectedWithItsName() {
+    void everySymbolHasADrawing() {
+        // Se si aggiunge un simbolo a FaceSymbol e ci si dimentica di disegnarlo, questo test lo dice.
         CardRenderer renderer = new CardRenderer();
-        CardFace face = CardFace.of(CardColor.GREEN, FaceSymbol.SKIP_EVERYONE);
+        for (FaceSymbol symbol : FaceSymbol.values()) {
+            CardFace face = new CardFace(CardColor.RED, symbol, "1");
+            assertDoesNotThrow(() -> renderer.draw(canvas().createGraphics(), face, 0, 0, 130), symbol.name());
+        }
+    }
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> renderer.draw(canvas().createGraphics(), face, 0, 0, 130));
-        assertTrue(e.getMessage().contains("SKIP_EVERYONE"));
+    @Test
+    void everyNoMercyCardCanBeDrawnAtEverySize() {
+        // Le carte vere: Salta tutti, Scarta tutto e Roulette non hanno etichetta e usano i disegni d'angolo.
+        CardImageCache cache = new CardImageCache();
+        Graphics2D g = canvas().createGraphics();
+        List<Card> cards = List.of(new ColorDrawFour(CardColor.YELLOW), new SkipEveryone(CardColor.GREEN),
+                new DiscardAll(CardColor.BLUE), new WildDrawSix(), new WildDrawTen(),
+                new WildReverseDrawFour(), new WildColorRoulette());
+        for (Card card : cards) {
+            for (int width : new int[] { 45, 130, 180 }) {
+                assertDoesNotThrow(() -> cache.draw(g, card.face(), 0, 0, width, false), card.toString());
+            }
+        }
+        assertEquals(cards.size() * 3, cache.size());
+        g.dispose();
     }
 
     @Test

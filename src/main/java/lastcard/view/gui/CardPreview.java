@@ -12,13 +12,21 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import lastcard.model.Card;
+import lastcard.model.CardColor;
 import lastcard.model.CardFace;
-import lastcard.model.Deck;
+import lastcard.model.ColorDrawFour;
 import lastcard.model.DeckFactory;
+import lastcard.model.DiscardAll;
+import lastcard.model.SkipEveryone;
+import lastcard.model.WildColorRoulette;
+import lastcard.model.WildDrawSix;
+import lastcard.model.WildDrawTen;
+import lastcard.model.WildReverseDrawFour;
 
 /**
  * Scrive {@code anteprima-carte.png} con tutte le facce del mazzo classico, una
- * fila di carte giocabili (bordo crema) e il dorso. Da rilanciare ogni volta che
+ * fila di carte giocabili (bordo crema) e il dorso, e una fila con le carte
+ * No Mercy. Da rilanciare ogni volta che
  * si tocca una proporzione o un colore:
  *
  * <pre>mvn -q compile exec:java -Dexec.mainClass=lastcard.view.gui.CardPreview</pre>
@@ -54,7 +62,17 @@ public final class CardPreview {
                 sorted.get(sorted.size() - 1));   // +4
 
         int height = CardRenderer.heightFor(WIDTH);
-        int rows = (sorted.size() + COLUMNS - 1) / COLUMNS + 1;
+        // ultima fila: una carta No Mercy per tipo, finché DeckFactory non ha il mazzo da 168
+        List<CardFace> noMercy = List.of(
+                new ColorDrawFour(CardColor.RED).face(),
+                new SkipEveryone(CardColor.GREEN).face(),
+                new DiscardAll(CardColor.BLUE).face(),
+                new WildDrawSix().face(),
+                new WildDrawTen().face(),
+                new WildReverseDrawFour().face(),
+                new WildColorRoulette().face());
+
+        int rows = (sorted.size() + COLUMNS - 1) / COLUMNS + 2;
         BufferedImage image = new BufferedImage(GAP + COLUMNS * (WIDTH + GAP), GAP + rows * (height + GAP),
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
@@ -66,11 +84,14 @@ public final class CardPreview {
             for (int i = 0; i < sorted.size(); i++) {
                 cache.draw(g, sorted.get(i), x(i), y(i / COLUMNS, height), WIDTH, false);
             }
-            int lastRow = rows - 1;
+            int playableRow = rows - 2;
             for (int i = 0; i < playable.size(); i++) {
-                cache.draw(g, playable.get(i), x(i), y(lastRow, height), WIDTH, true);
+                cache.draw(g, playable.get(i), x(i), y(playableRow, height), WIDTH, true);
             }
-            cache.drawBack(g, x(playable.size()), y(lastRow, height), WIDTH);
+            cache.drawBack(g, x(playable.size()), y(playableRow, height), WIDTH);
+            for (int i = 0; i < noMercy.size(); i++) {
+                cache.draw(g, noMercy.get(i), x(i), y(rows - 1, height), WIDTH, false);
+            }
         } finally {
             g.dispose();
         }

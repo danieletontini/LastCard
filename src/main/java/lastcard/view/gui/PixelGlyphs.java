@@ -45,6 +45,52 @@ public final class PixelGlyphs {
         { 0,0,0,0,0,1,1,1,0,0,0,0,0 }
     };
 
+    /** Freccia piccola che punta a destra, 7x5: le altre direzioni si ottengono con {@link #rotateClockwise}. */
+    public static final int[][] SMALL_ARROW = {
+        { 0,0,0,0,1,0,0 },
+        { 0,0,0,0,1,1,0 },
+        { 1,1,1,1,1,1,1 },
+        { 0,0,0,0,1,1,0 },
+        { 0,0,0,0,1,0,0 }
+    };
+
+    /** Lancetta della roulette: triangolo che punta in basso, 7x4. */
+    public static final int[][] POINTER = {
+        { 1,1,1,1,1,1,1 },
+        { 0,1,1,1,1,1,0 },
+        { 0,0,1,1,1,0,0 },
+        { 0,0,0,1,0,0,0 }
+    };
+
+    /** Cestino aperto: bordo in alto, fianchi e due listelli. Griglia 13x12. */
+    public static final int[][] BIN = {
+        { 1,1,1,1,1,1,1,1,1,1,1,1,1 },
+        { 1,1,1,1,1,1,1,1,1,1,1,1,1 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,1,0,0,1,0,0,0,1,0,0,1,0 },
+        { 0,0,1,0,1,0,0,0,1,0,1,0,0 },
+        { 0,0,1,1,1,1,1,1,1,1,1,0,0 }
+    };
+
+    /** La stessa griglia ruotata di un quarto di giro in senso orario: una freccia a destra diventa in giù. */
+    public static int[][] rotateClockwise(int[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        int[][] rotated = new int[cols][rows];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                rotated[c][rows - 1 - r] = matrix[r][c];
+            }
+        }
+        return rotated;
+    }
+
 
     /**
      * Disegna una matrix con l'angolo in alto a sinistra in (x, y).
