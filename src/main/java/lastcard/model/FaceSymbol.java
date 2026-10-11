@@ -7,7 +7,7 @@ package lastcard.model;
  * della carta con {@code instanceof}: ogni carta dichiara il proprio simbolo,
  * la vista lo traduce in un disegno.
  *
- * I simboli del No Mercy si aggiungono qui insieme alle loro carte.
+ * 
  */
 public enum FaceSymbol {
     NUMBER,
@@ -15,5 +15,15 @@ public enum FaceSymbol {
     REVERSE,
     SKIP,
     WILD,
-    WILD_DRAW_FOUR
+    WILD_DRAW_FOUR,
+
+
+
+    DRAW_FOUR,
+    WILD_DRAW_SIX,
+    WILD_DRAW_TEN,
+    WILD_REVERSE_DRAW_FOUR,
+    SKIP_EVERYONE,
+    DISCARD_ALL,
+    WILD_COLOR_ROULETTE
 }

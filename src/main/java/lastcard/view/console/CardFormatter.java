@@ -26,11 +26,20 @@ public final class CardFormatter {
             CardColor.BLACK, "Nero");
 
     // Testo mostrato per i simboli interni delle carte; numeri e +2 restano come sono.
-    private static final Map<String, String> LABELS = Map.of(
-            "SKIP", "Salta",
-            "REVERSE", "Inverti",
-            "WILD", "Jolly",
-            "+4", "Jolly +4");
+    // Map.ofEntries perché Map.of accetta al massimo dieci coppie.
+    private static final Map<String, String> LABELS = Map.ofEntries(
+            Map.entry("SKIP", "Salta"),
+            Map.entry("REVERSE", "Inverti"),
+            Map.entry("WILD", "Jolly"),
+            Map.entry("+4", "Jolly +4"),
+            // No Mercy
+            Map.entry("DRAW_FOUR", "+4"),
+            Map.entry("WILD_DRAW_SIX", "Jolly +6"),
+            Map.entry("WILD_DRAW_TEN", "Jolly +10"),
+            Map.entry("WILD_REVERSE_DRAW_FOUR", "Jolly Giro +4"),
+            Map.entry("SKIP_EVERYONE", "Salta tutti"),
+            Map.entry("DISCARD_ALL", "Scarta tutto"),
+            Map.entry("WILD_COLOR_ROULETTE", "Jolly Roulette"));
 
     public CardFormatter() {
     }
