@@ -2,6 +2,8 @@ package lastcard.view.gui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -53,6 +55,27 @@ class CardImageCacheTest {
         }
         assertEquals(54, cache.size());
         g.dispose();
+    }
+
+    @Test
+    void aFaceWithoutLabelAndWithoutCornerDrawingIsRejected() {
+        // Prima negli angoli finiva il simbolo di Salta, senza nessun errore.
+        CardRenderer renderer = new CardRenderer();
+        CardFace unlabelled = new CardFace(CardColor.RED, FaceSymbol.NUMBER, "");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> renderer.draw(canvas().createGraphics(), unlabelled, 0, 0, 130));
+        assertTrue(e.getMessage().contains("NUMBER"));
+    }
+
+    @Test
+    void aSymbolWithoutDrawingIsRejectedWithItsName() {
+        CardRenderer renderer = new CardRenderer();
+        CardFace face = CardFace.of(CardColor.GREEN, FaceSymbol.SKIP_EVERYONE);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> renderer.draw(canvas().createGraphics(), face, 0, 0, 130));
+        assertTrue(e.getMessage().contains("SKIP_EVERYONE"));
     }
 
     @Test

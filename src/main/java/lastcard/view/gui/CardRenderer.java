@@ -27,7 +27,10 @@ import lastcard.model.FaceSymbol;
  *
  * <p>La mappa {@code glyphs} associa ogni simbolo al modo di disegnarlo:
  * aggiungere una carta nuova significa registrare una voce, non toccare uno
- * {@code switch}.</p>
+ * {@code switch}. Negli angoli si scrive l'etichetta della carta; i simboli senza
+ * etichetta (inverti, salta, jolly) registrano il loro disegno in {@code cornerGlyphs}.
+ * Se per un simbolo manca il disegno del centro o quello degli angoli, la carta non
+ * viene disegnata affatto e si ottiene un'eccezione con il nome del simbolo.</p>
  *
  * <p>Disegna ogni volta da zero: per disegnare spesso le stesse carte si passa
  * da {@link CardImageCache}.</p>
@@ -79,6 +82,9 @@ public final class CardRenderer {
 
     private final Map<FaceSymbol, Glyph> glyphs = new EnumMap<>(FaceSymbol.class);
 
+    // Gli angoli dei simboli senza etichetta. Gli altri scrivono negli angoli la loro etichetta.
+    private final Map<FaceSymbol, Glyph> cornerGlyphs = new EnumMap<>(FaceSymbol.class);
+
     public CardRenderer() {
         glyphs.put(FaceSymbol.NUMBER, this::number);
         glyphs.put(FaceSymbol.DRAW_TWO, this::drawTwo);
@@ -86,6 +92,10 @@ public final class CardRenderer {
         glyphs.put(FaceSymbol.SKIP, this::skip);
         glyphs.put(FaceSymbol.WILD, this::wild);
         glyphs.put(FaceSymbol.WILD_DRAW_FOUR, this::wildDrawFour);
+
+        cornerGlyphs.put(FaceSymbol.REVERSE, this::reverseCorners);
+        cornerGlyphs.put(FaceSymbol.SKIP, this::skipCorners);
+        cornerGlyphs.put(FaceSymbol.WILD, this::wildCorners);
     }
 
     /** Altezza corrispondente a una larghezza. */
@@ -108,6 +118,15 @@ public final class CardRenderer {
         if (glyph == null) {
             throw new IllegalArgumentException("Nessun disegno registrato per " + face.symbol());
         }
+        // Controllato prima di disegnare, così non resta una carta disegnata a metà.
+        Glyph corner = cornerGlyphs.get(face.symbol());
+        if (corner == null) {
+            if (face.label().isEmpty()) {
+                throw new IllegalArgumentException("Nessun disegno registrato per gli angoli di " + face.symbol()
+                        + ": serve un'etichetta oppure una voce in cornerGlyphs");
+            }
+            corner = this::labelCorners;
+        }
         Graphics2D g = prepare(g0);
         try {
             double w = width;
@@ -120,7 +139,7 @@ public final class CardRenderer {
             Shape previousClip = g.getClip();
             g.clip(screenShape(screen, w));
             glyph.draw(g, screen, face, w);
-            corners(g, screen, face, w);
+            corner.draw(g, screen, face, w);
             g.setClip(previousClip);
         } finally {
             g.dispose();
@@ -205,19 +224,9 @@ public final class CardRenderer {
         }
     }
 
-    /** L'etichetta (o il simbolo in piccolo) ripetuta nei due angoli opposti. */
-    private void corners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
+    /** L'etichetta ("7", "+2", "+4") ripetuta nei due angoli opposti. */
+    private void labelCorners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
         double m = w * CORNER_MARGIN;
-        if (face.symbol() == FaceSymbol.WILD) {
-            double d = w * WILD_CORNER_WHEEL;
-            colorWheel(g, screen.x + m, screen.y + m, d, w * 1.0 / 130);
-            colorWheel(g, screen.getMaxX() - m - d, screen.getMaxY() - m - d, d, w * 1.0 / 130);
-            return;
-        }
-        if (face.label().isEmpty()) {
-            cornerGlyph(g, screen, face, w);
-            return;
-        }
         g.setFont(ArcadeFont.of((float) (w * CORNER_SIZE)));
         g.setColor(ArcadePalette.ink(face.color()));
         FontMetrics fm = g.getFontMetrics();
@@ -227,11 +236,26 @@ public final class CardRenderer {
                 (float) (screen.getMaxY() - m - fm.getDescent()));
     }
 
-    /** Per inverti e salta turno l'angolo ripete il simbolo in piccolo. */
-    private void cornerGlyph(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
-        boolean reverse = face.symbol() == FaceSymbol.REVERSE;
-        int[][] matrix = reverse ? PixelGlyphs.REVERSE : PixelGlyphs.SKIP;
-        double width = w * (reverse ? REVERSE_CORNER : SKIP_CORNER);
+    private void reverseCorners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
+        matrixCorners(g, screen, face, w, PixelGlyphs.REVERSE, REVERSE_CORNER);
+    }
+
+    private void skipCorners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
+        matrixCorners(g, screen, face, w, PixelGlyphs.SKIP, SKIP_CORNER);
+    }
+
+    /** Il jolly ha negli angoli la ruota dei colori in piccolo. */
+    private void wildCorners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
+        double m = w * CORNER_MARGIN;
+        double d = w * WILD_CORNER_WHEEL;
+        colorWheel(g, screen.x + m, screen.y + m, d, w * 1.0 / 130);
+        colorWheel(g, screen.getMaxX() - m - d, screen.getMaxY() - m - d, d, w * 1.0 / 130);
+    }
+
+    /** Un simbolo a blocchi ripetuto in piccolo nei due angoli opposti. */
+    private void matrixCorners(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w,
+                               int[][] matrix, double size) {
+        double width = w * size;
         double height = PixelGlyphs.heightFor(matrix, width);
         double m = w * CORNER_MARGIN;
         Color ink = ArcadePalette.ink(face.color());
