@@ -29,6 +29,8 @@ CARTE NUOVE
   il nuovo giocatore successivo pesca quattro carte e salta il turno.
 - Jolly Roulette Colore: il giocatore successivo sceglie un colore e scopre carte dal mazzo
   finché non esce quel colore; tiene tutte le carte scoperte.
+- Jolly Rimescola Mani (una sola nel mazzo): chi lo gioca sceglie il colore, e le mani di tutti
+  vengono scambiate a caso: ognuno riceve per intero la mano di un altro giocatore, mai la propria.
 
 PUNTEGGIO
 Numeri al loro valore, carte azione colorate 20 punti, jolly 50.
