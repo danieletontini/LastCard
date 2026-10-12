@@ -73,6 +73,9 @@ public class ConsoleView implements GameView, GameObserver {
         System.out.println("In cima: " + top + "   Colore attivo: " + activeColorText(state));
 
         System.out.println("Avversari: " + opponentsText(state));
+        if (state.pendingDraw() > 0) {
+            System.out.println("Penalità in corso: " + cardsText(state.pendingDraw()));
+        }
         System.out.println("La tua mano: " + formatter.formatHand(state.currentHand()));
 
         if (state.state() != GameState.IN_PROGRESS) {
@@ -99,6 +102,10 @@ public class ConsoleView implements GameView, GameObserver {
         while (true) {
             System.out.println(menu);
             System.out.print("> ");
+            if (!in.hasNextLine()) {
+                // Input chiuso (Ctrl+D): si sceglie il primo colore, poi il ciclo dei comandi si ferma da solo.
+                return CHOOSABLE_COLORS.get(0);
+            }
             String line = in.nextLine().trim();
             try {
                 int choice = Integer.parseInt(line);
@@ -109,6 +116,33 @@ public class ConsoleView implements GameView, GameObserver {
                 // non è un numero: si ripete la domanda
             }
             showError("Scrivi un numero da 1 a " + CHOOSABLE_COLORS.size() + ".");
+        }
+    }
+
+    @Override
+    public String askSwapTarget(List<String> opponents) {
+        StringBuilder menu = new StringBuilder("Con chi scambi la mano?");
+        for (int i = 0; i < opponents.size(); i++) {
+            menu.append("  ").append(i + 1).append(") ").append(opponents.get(i));
+        }
+
+        while (true) {
+            System.out.println(menu);
+            System.out.print("> ");
+            if (!in.hasNextLine()) {
+                // Input chiuso (Ctrl+D): si sceglie il primo, poi il ciclo dei comandi si ferma da solo.
+                return opponents.get(0);
+            }
+            String line = in.nextLine().trim();
+            try {
+                int choice = Integer.parseInt(line);
+                if (choice >= 1 && choice <= opponents.size()) {
+                    return opponents.get(choice - 1);
+                }
+            } catch (NumberFormatException e) {
+                // non è un numero: si ripete la domanda
+            }
+            showError("Scrivi un numero da 1 a " + opponents.size() + ".");
         }
     }
 
@@ -147,6 +181,20 @@ public class ConsoleView implements GameView, GameObserver {
             printEvent(name + " dichiara Ultima!");
         } else if (type == GameEvent.Type.LAST_CARD_PENALTY) {
             printEvent(name + " non ha dichiarato Ultima!: pesca " + cardsText(event.count()) + " di penalità");
+        } else if (type == GameEvent.Type.PENALTY_STACKED) {
+            printEvent(name + " rilancia: la penalità sale a " + cardsText(event.count()));
+        } else if (type == GameEvent.Type.ALL_SKIPPED) {
+            printEvent(name + " fa saltare il turno a tutti gli altri");
+        } else if (type == GameEvent.Type.CARDS_DISCARDED) {
+            printEvent(name + " scarta altre " + cardsText(event.count()) + " " + formatter.formatColor(event.color()));
+        } else if (type == GameEvent.Type.HANDS_SWAPPED) {
+            printEvent(name + " scambia la mano con [" + event.targetName() + "]");
+        } else if (type == GameEvent.Type.HANDS_ROTATED) {
+            printEvent("Tutti passano la propria mano al giocatore successivo");
+        } else if (type == GameEvent.Type.PLAYER_ELIMINATED) {
+            printEvent(name + " ha troppe carte ed è eliminato");
+        } else if (type == GameEvent.Type.HAND_WON) {
+            printEvent(name + " chiude la mano e prende " + event.count() + " punti");
         }
         // GAME_WON non stampa niente: il vincitore lo annuncia già showWinner, chiamato dal controller.
     }
@@ -163,7 +211,9 @@ public class ConsoleView implements GameView, GameObserver {
     }
 
     private String activeColorText(VisibleState state) {
-        if (state.state() == GameState.AWAITING_COLOR || state.activeColor() == null) {
+        boolean choosing = state.state() == GameState.AWAITING_COLOR
+                || state.state() == GameState.AWAITING_ROULETTE_COLOR;
+        if (choosing || state.activeColor() == null) {
             return "da scegliere";
         }
         return formatter.formatColor(state.activeColor());
@@ -172,7 +222,12 @@ public class ConsoleView implements GameView, GameObserver {
     private String opponentsText(VisibleState state) {
         List<String> parts = new ArrayList<>();
         for (PlayerSummary player : state.players()) {
-            if (!player.name().equals(state.currentPlayerName())) {
+            if (player.name().equals(state.currentPlayerName())) {
+                continue;
+            }
+            if (player.eliminated()) {
+                parts.add(player.name() + " eliminato");
+            } else {
                 parts.add(player.name() + " " + player.cardCount());
             }
         }

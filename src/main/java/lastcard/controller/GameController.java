@@ -1,5 +1,6 @@
 package lastcard.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +20,8 @@ import lastcard.model.Move;
 import lastcard.model.Pass;
 import lastcard.model.PlayCard;
 import lastcard.model.Player;
+import lastcard.model.PlayerSummary;
+import lastcard.model.SwapHands;
 import lastcard.model.VisibleState;
 import lastcard.view.GameView;
 
@@ -87,6 +90,15 @@ public class GameController {
         perform(new ChooseColor(actingPlayerName(), color), "Non puoi scegliere il colore adesso.");
     }
 
+    /** No Mercy, scambio 7: il giocatore ha scelto con chi scambiare la mano. */
+    public void onSwapTargetChosen(String targetName) {
+        if (targetName == null) {
+            view.showError("Scegli un avversario.");
+            return;
+        }
+        perform(new SwapHands(actingPlayerName(), targetName), "Non puoi scambiare la mano con questo giocatore.");
+    }
+
     /** Serve al ciclo della vista console per sapere quando fermarsi. */
     public boolean isGameOver() {
         return game.isFinished();
@@ -103,7 +115,8 @@ public class GameController {
         showOutcome();
     }
 
-    // Dopo ogni mossa: prima giocano le CPU, poi vincitore oppure il nuovo stato e, dopo un jolly, la scelta del colore.
+    // Dopo ogni mossa: prima giocano le CPU, poi vincitore oppure il nuovo stato, e le scelte che il modello aspetta
+    // (il colore dopo un jolly o per la Roulette, l'avversario dopo un 7).
     // Quando si arriva a mostrare lo stato tocca sempre a un umano: la mano mostrata e la scelta del colore sono sue.
     private void showOutcome() {
         playCpuTurns();
@@ -116,9 +129,23 @@ public class GameController {
         }
         VisibleState state = game.getVisibleState();
         view.showState(state);
-        if (state.state() == GameState.AWAITING_COLOR) {
+        if (state.state() == GameState.AWAITING_COLOR || state.state() == GameState.AWAITING_ROULETTE_COLOR) {
             onColorChosen(view.askColor());
+        } else if (state.state() == GameState.AWAITING_SWAP_TARGET) {
+            onSwapTargetChosen(view.askSwapTarget(swapCandidates(state)));
         }
+    }
+
+    // Con chi si può scambiare la mano: tutti tranne chi sceglie e gli eliminati.
+    private List<String> swapCandidates(VisibleState state) {
+        List<String> names = new ArrayList<>();
+        for (PlayerSummary player : state.players()) {
+            boolean isChooser = player.name().equals(state.currentPlayerName());
+            if (!isChooser && !player.eliminated()) {
+                names.add(player.name());
+            }
+        }
+        return names;
     }
 
     // Finché deve agire una CPU, le si chiede cosa fare e si eseguono le sue mosse.

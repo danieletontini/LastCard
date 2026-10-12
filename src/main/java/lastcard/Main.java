@@ -9,6 +9,7 @@ import lastcard.controller.GameController;
 import lastcard.model.BasicCpuStrategy;
 import lastcard.model.CpuPlayer;
 import lastcard.model.Game;
+import lastcard.model.GameRules;
 import lastcard.view.audio.AudioPlayer;
 import lastcard.view.audio.GameSounds;
 import lastcard.view.console.CardFormatter;
@@ -21,28 +22,37 @@ public class Main {
     private Main() {
     }
 
-    /** Sceglie la vista: --console per il terminale, --gui (o nessun argomento) per la finestra. */
+    /**
+     * Sceglie la vista: --console per il terminale, --gui (o nessun argomento) per la finestra.
+     * Nel terminale, --nomercy dopo --console avvia la modalità No Mercy invece di quella classica.
+     */
     public static void main(String[] args) {
         String mode = "--gui";
         if (args.length > 0) {
             mode = args[0];
         }
+        String variant = "";
+        if (args.length > 1) {
+            variant = args[1];
+        }
 
-        if (mode.equals("--console")) {
-            runConsole();
-        } else if (mode.equals("--gui")) {
+        if (mode.equals("--console") && variant.isEmpty()) {
+            runConsole(GameRules.classic());
+        } else if (mode.equals("--console") && variant.equals("--nomercy")) {
+            runConsole(GameRules.noMercy());
+        } else if (mode.equals("--gui") && variant.isEmpty()) {
             runGui();
         } else {
-            System.out.println("Argomento non riconosciuto: " + mode);
-            System.out.println("Uso: --console oppure --gui (predefinito)");
+            System.out.println("Argomenti non riconosciuti.");
+            System.out.println("Uso: --gui (predefinito), --console, oppure --console --nomercy");
         }
     }
 
-    private static void runConsole() {
+    private static void runConsole(GameRules rules) {
         Scanner in = new Scanner(System.in);
         ConsoleView view = new ConsoleView(new CardFormatter(), in);
 
-        Game game = new Game(List.of("Tu", "CPU 1", "CPU 2"));
+        Game game = new Game(List.of("Tu", "CPU 1", "CPU 2"), rules);
         List<CpuPlayer> cpus = List.of(
                 new CpuPlayer("CPU 1", new BasicCpuStrategy()),
                 new CpuPlayer("CPU 2", new BasicCpuStrategy()));
