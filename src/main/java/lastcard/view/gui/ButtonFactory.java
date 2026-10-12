@@ -22,11 +22,25 @@ public final class ButtonFactory {
         clickSound = Objects.requireNonNull(sound, "sound");
     }
 
-    /** Un pulsante normale: si preme e fa un'azione. */
+    /** Un pulsante normale: si preme e fa un'azione. Ha l'aspetto SECONDARY, scuro con il bordo. */
     public static JButton createButton(String text) {
         JButton button = new JButton(text);
         applyStyle(button);
         return button;
+    }
+
+    /** Un pulsante normale con l'aspetto scelto: PRIMARY per l'azione principale della schermata. */
+    public static JButton createButton(String text, ArcadeButtonUI.Variant variant) {
+        JButton button = createButton(text);
+        setVariant(button, variant);
+        return button;
+    }
+
+    /** Cambia l'aspetto di un pulsante già creato. */
+    public static void setVariant(AbstractButton button, ArcadeButtonUI.Variant variant) {
+        Objects.requireNonNull(variant, "variant");
+        button.putClientProperty(ArcadeButtonUI.VARIANT_KEY, variant);
+        button.repaint();
     }
 
     /** Un pulsante a due stati, premuto o no: scelte esclusive e interruttori. */
@@ -44,8 +58,12 @@ public final class ButtonFactory {
         return checkBox;
     }
 
-    // Qui andrà lo stile arcade. Per ora i pulsanti restano quelli standard di Swing, con il suono del click.
+    // Stile arcade e suono del click per tutti i pulsanti. Le caselle da spuntare per ora restano quelle
+    // standard di Swing: ArcadeButtonUI disegna pulsanti, non caselle.
     private static void applyStyle(AbstractButton button) {
+        if (!(button instanceof JCheckBox)) {
+            button.setUI(ArcadeButtonUI.instance());
+        }
         button.addActionListener(e -> clickSound.run());
     }
 }
