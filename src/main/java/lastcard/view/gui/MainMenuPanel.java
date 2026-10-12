@@ -12,7 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-/** Il menu principale: Gioca, Regole, Opzioni, Esci. Per ora funzionano Regole, Opzioni ed Esci. */
+/** Il menu principale: Gioca, Regole, Opzioni, Esci. */
 public class MainMenuPanel extends JPanel {
 
     public MainMenuPanel(final Navigator navigator) {
@@ -27,8 +27,12 @@ public class MainMenuPanel extends JPanel {
         JButton options = ButtonFactory.createButton("Opzioni");
         JButton exit = ButtonFactory.createButton("Esci");
 
-        // La schermata di Gioca non esiste ancora.
-        play.setEnabled(false);
+        play.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navigator.show(Screen.PLAY);
+            }
+        });
 
         rules.addActionListener(new ActionListener() {
             @Override
