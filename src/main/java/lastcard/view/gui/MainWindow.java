@@ -24,6 +24,7 @@ public class MainWindow extends JFrame {
         Navigator navigator = new Navigator();
         navigator.register(Screen.MAIN_MENU, new MainMenuPanel(navigator));
         navigator.register(Screen.PLAY, new PlayPanel(navigator));
+        navigator.register(Screen.NEW_GAME, new NewGamePanel(navigator));
         navigator.register(Screen.RULES, new RulesPanel(navigator));
         navigator.register(Screen.OPTIONS, new OptionsPanel(navigator, settings, this, audio));
         navigator.show(Screen.MAIN_MENU);

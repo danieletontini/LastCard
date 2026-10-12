@@ -33,8 +33,13 @@ public class PlayPanel extends JPanel {
                 "<html><b>Giocatore singolo</b><br>Tu contro la CPU, da uno a nove avversari.</html>");
         JButton multi = ButtonFactory.createButton(
                 "<html><b>Multigiocatore</b><br>Contro altre persone, sulla stessa rete locale.</html>");
-        // Le schermate Nuova partita e Multigiocatore non esistono ancora.
-        single.setEnabled(false);
+        single.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navigator.show(Screen.NEW_GAME);
+            }
+        });
+        // La schermata Multigiocatore non esiste ancora.
         multi.setEnabled(false);
 
         JPanel column = new JPanel(new GridLayout(0, 1, 0, 15));
