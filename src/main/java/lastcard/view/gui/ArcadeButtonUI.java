@@ -56,7 +56,8 @@ public class ArcadeButtonUI extends BasicButtonUI {
     private static final int ARC = 4;
     private static final int PAD_X = 24;
     private static final int HEIGHT = 46;
-    private static final float FONT_SIZE = 14f;
+    /** Il corpo del testo dei pulsanti a grandezza normale; più grande, il pulsante cresce in proporzione. */
+    static final float FONT_SIZE = 14f;
     /** Spessore del bordo rosso che compare sui pulsanti PRIMARY col mouse sopra. */
     private static final int HOVER_BORDER = 3;
     /** La freccetta del focus da tastiera: larghezza e distanza dal testo. */
@@ -103,9 +104,11 @@ public class ArcadeButtonUI extends BasicButtonUI {
             Dimension d = super.getPreferredSize(c);
             return new Dimension(d.width + 2 * PAD_X + DEPTH, Math.max(HEIGHT, d.height + 28) + DEPTH);
         }
+        // Altezza e margini crescono con il font: per ingrandire un pulsante basta dargli un font più grande.
+        float scale = Math.max(1f, b.getFont().getSize2D() / FONT_SIZE);
         FontMetrics fm = b.getFontMetrics(b.getFont());
         int text = fm.stringWidth(label(b));
-        return new Dimension(text + 2 * PAD_X + DEPTH, HEIGHT + DEPTH);
+        return new Dimension(text + Math.round(2 * PAD_X * scale) + DEPTH, Math.round(HEIGHT * scale) + DEPTH);
     }
 
     @Override

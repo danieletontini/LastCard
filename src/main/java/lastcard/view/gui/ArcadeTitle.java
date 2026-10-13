@@ -24,17 +24,24 @@ public class ArcadeTitle extends JComponent {
     static final Color SHADOW = ArcadeButtonUI.SHADOW;
 
     private final String[] lines;
-    private final float size;
-    private final int shadow;
-    private final int lineGap;
+    private float size;
+    private int shadow;
+    private int lineGap;
 
     /** @param size corpo del font in pixel: 52 per il menu, circa 22 per i titoli delle schermate */
     public ArcadeTitle(float size, String... lines) {
         this.lines = Objects.requireNonNull(lines, "lines").clone();
+        setOpaque(false);
+        setFontSize(size);
+    }
+
+    /** Cambia la grandezza del titolo; ombra e interlinea seguono in proporzione. */
+    public void setFontSize(float size) {
         this.size = size;
         this.shadow = Math.max(2, Math.round(size / 9f));
         this.lineGap = Math.round(size * 0.2f);
-        setOpaque(false);
+        revalidate();
+        repaint();
     }
 
     private Font font() {
