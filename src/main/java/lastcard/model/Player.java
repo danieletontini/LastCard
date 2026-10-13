@@ -58,8 +58,28 @@ public class Player {
         return List.copyOf(playable);
     }
 
+    // Chi è stato eliminato ha la mano vuota ma non ha vinto.
     public boolean hasWon() {
-        return hand.isEmpty();
+        return !eliminated && hand.isEmpty();
+    }
+
+    // No Mercy: il giocatore esce dalla mano e restituisce le sue carte, che tornano negli scarti.
+    List<Card> eliminate() {
+        eliminated = true;
+        return takeHand();
+    }
+
+    // Toglie e restituisce tutta la mano: serve allo scambio del 7 e alla rotazione dello 0.
+    List<Card> takeHand() {
+        List<Card> cards = new ArrayList<>(hand);
+        hand.clear();
+        return cards;
+    }
+
+    void addCards(List<Card> cards) {
+        for (Card card : cards) {
+            addCard(card);
+        }
     }
 
     public int handPoints() {

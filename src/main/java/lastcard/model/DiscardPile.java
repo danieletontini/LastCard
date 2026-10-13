@@ -17,6 +17,19 @@ public class DiscardPile {
         cards.add(Objects.requireNonNull(card, "card"));
     }
 
+    /**
+     * Mette le carte sotto la cima, che resta la stessa: servono al No Mercy per le carte di Scarta Tutto
+     * e per la mano di chi viene eliminato, che così tornano in gioco alla prossima rigenerazione del mazzo.
+     */
+    public void addUnderTop(List<Card> added) {
+        Objects.requireNonNull(added, "added");
+        int position = cards.isEmpty() ? 0 : cards.size() - 1;
+        for (Card card : added) {
+            cards.add(position, Objects.requireNonNull(card, "card"));
+            position++;
+        }
+    }
+
     public Card top() {
         if (cards.isEmpty()) {
             throw new IllegalStateException("The discard pile is empty.");
