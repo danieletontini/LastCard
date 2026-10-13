@@ -74,10 +74,12 @@ public class CpuPlayer {
         return opponents;
     }
 
+    // La stessa regola di Game: con una penalità in corso restano solo le carte Pesca che la rilanciano.
+    // Se non ce ne sono, la strategia non sceglie nulla e la CPU pesca il totale.
     private static List<Card> playableCards(VisibleState state) {
         List<Card> playable = new ArrayList<>();
         for (Card card : state.currentHand()) {
-            if (card.isPlayable(state.top(), state.activeColor())) {
+            if (PlayRules.canPlay(card, state.top(), state.activeColor(), state.pendingDraw())) {
                 playable.add(card);
             }
         }
