@@ -9,7 +9,6 @@ import java.awt.event.ActionListener;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -24,6 +23,8 @@ import lastcard.view.audio.AudioPlayer;
  * Lo sfondo è lo stesso del menu principale.
  */
 public class OptionsPanel extends ArcadeBackgroundPanel {
+
+    private static final float VOLUME_LABEL_SIZE = 10f;
 
     private final Settings settings;
     private final JSlider volume;
@@ -88,10 +89,11 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         updateVolumeLabel();
         updateVolumeEnabled();
 
-        for (JComponent c : new JComponent[] { fullScreen, mute, volume, volumeLabel }) {
-            c.setOpaque(false);
-            c.setForeground(ArcadeButtonUI.CREAM);
-        }
+        // Le caselle hanno già lo stile arcade da ButtonFactory; lo slider e la sua etichetta lo prendono qui.
+        volume.setUI(new ArcadeSliderUI(volume));
+        volume.setOpaque(false);
+        volumeLabel.setFont(ArcadeFont.of(VOLUME_LABEL_SIZE));
+        volumeLabel.setForeground(ArcadeButtonUI.CREAM);
 
         JPanel volumeBox = new JPanel(new BorderLayout());
         volumeBox.setOpaque(false);
@@ -120,6 +122,7 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
     private void updateVolumeEnabled() {
         boolean enabled = !settings.isMuted();
         volume.setEnabled(enabled);
-        volumeLabel.setEnabled(enabled);
+        // Un JLabel disattivato Swing lo disegna in rilievo grigio: qui lo si spegne solo cambiando colore.
+        volumeLabel.setForeground(enabled ? ArcadeButtonUI.CREAM : ArcadeButtonUI.TEXT_DISABLED);
     }
 }

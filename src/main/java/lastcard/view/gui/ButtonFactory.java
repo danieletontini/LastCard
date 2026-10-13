@@ -58,10 +58,11 @@ public final class ButtonFactory {
         return checkBox;
     }
 
-    // Stile arcade e suono del click per tutti i pulsanti. Le caselle da spuntare per ora restano quelle
-    // standard di Swing: ArcadeButtonUI disegna pulsanti, non caselle.
+    // Stile arcade e suono del click per tutti i pulsanti. Le caselle hanno un disegno loro: testo e riquadro.
     private static void applyStyle(AbstractButton button) {
-        if (!(button instanceof JCheckBox)) {
+        if (button instanceof JCheckBox) {
+            button.setUI(ArcadeCheckBoxUI.instance());
+        } else {
             button.setUI(ArcadeButtonUI.instance());
         }
         button.addActionListener(e -> clickSound.run());
