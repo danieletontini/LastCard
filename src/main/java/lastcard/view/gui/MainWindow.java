@@ -1,5 +1,7 @@
 package lastcard.view.gui;
 
+import java.awt.Dimension;
+
 import javax.swing.JFrame;
 
 import lastcard.controller.AppController;
@@ -21,8 +23,10 @@ public class MainWindow extends JFrame implements MenuView {
     public MainWindow() {
         super("Ultima Carta");
         Settings settings = new Settings();
+        // Ogni avvio parte a schermo intero e con il volume a 67, qualunque scelta ci fosse alla chiusura.
+        settings.applyStartupDefaults();
 
-        // Un solo AudioPlayer per tutta la finestra, con il volume salvato nelle Opzioni.
+        // Un solo AudioPlayer per tutta la finestra, con il volume delle Opzioni.
         AudioPlayer audio = new AudioPlayer();
         audio.setVolume(settings.effectiveVolume());
         ButtonFactory.setClickSound(() -> audio.play(SoundEffect.BUTTON_CLICK));
@@ -43,9 +47,10 @@ public class MainWindow extends JFrame implements MenuView {
 
         setContentPane(navigator.getContainer());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Sotto i 960x640 le schermate non stanno: la finestra si può ingrandire, non rimpicciolire.
+        setMinimumSize(new Dimension(WIDTH, HEIGHT));
         setSize(WIDTH, HEIGHT);
         setLocationRelativeTo(null);
-        // Si riparte con la scelta dell'ultima volta.
         setFullScreen(settings.isFullScreen());
     }
 

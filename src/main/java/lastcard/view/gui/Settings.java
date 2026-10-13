@@ -13,6 +13,8 @@ public class Settings {
     public static final int MIN_VOLUME = 0;
     public static final int MAX_VOLUME = 100;
     private static final int DEFAULT_VOLUME = 80;
+    /** Il volume con cui parte ogni avvio della finestra, qualunque fosse alla chiusura. */
+    public static final int STARTUP_VOLUME = 67;
 
     private static final String FULL_SCREEN = "fullScreen";
     private static final String MUTED = "muted";
@@ -27,6 +29,16 @@ public class Settings {
     // Per i test: un nodo a parte, da cancellare alla fine, invece di quello vero dell'utente.
     Settings(Preferences preferences) {
         this.preferences = Objects.requireNonNull(preferences, "preferences");
+    }
+
+    /**
+     * Ogni avvio parte allo stesso modo: schermo intero, audio attivo, volume a 67.
+     * Le Opzioni cambiano le scelte durante la partita, ma al riavvio si torna a queste.
+     */
+    public void applyStartupDefaults() {
+        setFullScreen(true);
+        setMuted(false);
+        setVolume(STARTUP_VOLUME);
     }
 
     public boolean isFullScreen() {

@@ -51,6 +51,22 @@ class SettingsTest {
     }
 
     @Test
+    void everyStartIsFullScreenWithSoundAtSixtySeven() {
+        Settings last = new Settings(node);
+        last.setFullScreen(false);
+        last.setMuted(true);
+        last.setVolume(20);
+
+        Settings next = new Settings(node);
+        next.applyStartupDefaults();
+
+        assertTrue(next.isFullScreen());
+        assertFalse(next.isMuted());
+        assertEquals(67, next.getVolume());
+        assertEquals(67, next.effectiveVolume());
+    }
+
+    @Test
     void volumeStaysBetweenZeroAndOneHundred() {
         Settings settings = new Settings(node);
 
