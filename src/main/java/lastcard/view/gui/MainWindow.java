@@ -2,15 +2,21 @@ package lastcard.view.gui;
 
 import javax.swing.JFrame;
 
+import lastcard.controller.AppController;
+import lastcard.controller.GameSettings;
+import lastcard.view.MenuView;
 import lastcard.view.audio.AudioPlayer;
 import lastcard.view.audio.Music;
 import lastcard.view.audio.SoundEffect;
 
 /** L'unica finestra della GUI, 960x640 o a schermo intero. Il contenuto è il pannello del Navigator, con tutte le schermate. */
-public class MainWindow extends JFrame {
+public class MainWindow extends JFrame implements MenuView {
 
     private static final int WIDTH = 960;
     private static final int HEIGHT = 640;
+
+    private final Navigator navigator;
+    private final TablePlaceholderPanel table;
 
     public MainWindow() {
         super("Ultima Carta");
@@ -21,10 +27,14 @@ public class MainWindow extends JFrame {
         audio.setVolume(settings.effectiveVolume());
         ButtonFactory.setClickSound(() -> audio.play(SoundEffect.BUTTON_CLICK));
 
-        Navigator navigator = new Navigator();
+        this.navigator = new Navigator();
+        this.table = new TablePlaceholderPanel(navigator);
+        // Il controller del menu crea la partita e poi chiede a questa finestra di mostrare il tavolo.
+        AppController controller = new AppController(this);
         navigator.register(Screen.MAIN_MENU, new MainMenuPanel(navigator));
         navigator.register(Screen.PLAY, new PlayPanel(navigator));
-        navigator.register(Screen.NEW_GAME, new NewGamePanel(navigator));
+        navigator.register(Screen.NEW_GAME, new NewGamePanel(navigator, controller));
+        navigator.register(Screen.TABLE, table);
         navigator.register(Screen.RULES, new RulesPanel(navigator));
         navigator.register(Screen.OPTIONS, new OptionsPanel(navigator, settings, this, audio));
         navigator.show(Screen.MAIN_MENU);
@@ -37,6 +47,12 @@ public class MainWindow extends JFrame {
         setLocationRelativeTo(null);
         // Si riparte con la scelta dell'ultima volta.
         setFullScreen(settings.isFullScreen());
+    }
+
+    @Override
+    public void showTable(GameSettings settings) {
+        table.showSettings(settings);
+        navigator.show(Screen.TABLE);
     }
 
     /**

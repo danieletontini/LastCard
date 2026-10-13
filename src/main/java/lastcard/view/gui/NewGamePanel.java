@@ -16,16 +16,16 @@ import javax.swing.SwingConstants;
 
 import lastcard.controller.GameGoal;
 import lastcard.controller.GameMode;
+import lastcard.controller.GameSettings;
+import lastcard.controller.MenuActions;
 
 /**
  * Nuova partita: modalità, numero di avversari e obiettivo, poi Inizia.
  * Il pannello resta lo stesso per tutta la vita della finestra, quindi le scelte restano se si torna indietro e si rientra.
- * Per ora è solo vista: Inizia è disattivato finché non c'è il controller che crea la partita.
+ * Inizia raccoglie le scelte in un GameSettings e lo passa al controller, che crea la partita.
  */
 public class NewGamePanel extends JPanel {
 
-    private static final int MIN_OPPONENTS = 1;
-    private static final int MAX_OPPONENTS = 9;
 
     private final ChoiceGroup<GameMode> modeGroup;
     private final ChoiceGroup<GameGoal> goalGroup;
@@ -38,9 +38,9 @@ public class NewGamePanel extends JPanel {
     private final JLabel summary;
     private int opponents;
 
-    public NewGamePanel(final Navigator navigator) {
+    public NewGamePanel(final Navigator navigator, final MenuActions actions) {
         super(new BorderLayout());
-        this.opponents = MIN_OPPONENTS;
+        this.opponents = GameSettings.MIN_OPPONENTS;
 
         // In alto: Indietro e il titolo.
         JButton back = ButtonFactory.createButton("Indietro");
@@ -100,8 +100,12 @@ public class NewGamePanel extends JPanel {
 
         // In fondo: il riepilogo a sinistra, Inizia a destra.
         JButton start = ButtonFactory.createButton("Inizia");
-        // Il controller che crea la partita non c'è ancora.
-        start.setEnabled(false);
+        start.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                actions.startGame(currentSettings());
+            }
+        });
         JPanel bottom = new JPanel(new BorderLayout());
         bottom.add(summary, BorderLayout.WEST);
         bottom.add(start, BorderLayout.EAST);
@@ -134,7 +138,7 @@ public class NewGamePanel extends JPanel {
 
     private void changeOpponents(int delta) {
         int value = opponents + delta;
-        if (value < MIN_OPPONENTS || value > MAX_OPPONENTS) {
+        if (value < GameSettings.MIN_OPPONENTS || value > GameSettings.MAX_OPPONENTS) {
             return;
         }
         opponents = value;
@@ -151,8 +155,8 @@ public class NewGamePanel extends JPanel {
 
         opponentsValue.setText(String.valueOf(opponents));
         playersAtTable.setText((opponents + 1) + " giocatori al tavolo");
-        minus.setEnabled(opponents > MIN_OPPONENTS);
-        plus.setEnabled(opponents < MAX_OPPONENTS);
+        minus.setEnabled(opponents > GameSettings.MIN_OPPONENTS);
+        plus.setEnabled(opponents < GameSettings.MAX_OPPONENTS);
 
         String opponentsText;
         if (opponents == 1) {
@@ -161,5 +165,9 @@ public class NewGamePanel extends JPanel {
             opponentsText = opponents + " avversari";
         }
         summary.setText(ChoiceLabels.MODES.get(mode) + " / " + opponentsText + " / " + ChoiceLabels.GOALS.get(goal));
+    }
+
+    private GameSettings currentSettings() {
+        return new GameSettings(modeGroup.getSelection(), opponents, goalGroup.getSelection());
     }
 }

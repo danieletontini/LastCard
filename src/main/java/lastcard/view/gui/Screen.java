@@ -7,4 +7,5 @@ public enum Screen {
     OPTIONS,
     PLAY,
     NEW_GAME,
+    TABLE,
 }
