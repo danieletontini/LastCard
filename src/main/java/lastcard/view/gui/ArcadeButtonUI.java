@@ -41,7 +41,7 @@ public class ArcadeButtonUI extends BasicButtonUI {
 
     // Colori del tema, oltre a quelli delle carte in ArcadePalette.
     static final Color CREAM = new Color(0xF6E3AE);
-    static final Color CREAM_HOVER = new Color(0xFFF0C6);
+    static final Color CREAM_HOVER = new Color(0xFFF8E2);
     static final Color SHADOW = new Color(0xC32B3A);
     static final Color BODY = new Color(0x15161B);
     static final Color BODY_HOVER = new Color(0x1D1E25);
@@ -57,6 +57,20 @@ public class ArcadeButtonUI extends BasicButtonUI {
     private static final int PAD_X = 24;
     private static final int HEIGHT = 46;
     private static final float FONT_SIZE = 14f;
+    /** Spessore del bordo rosso che compare sui pulsanti PRIMARY col mouse sopra. */
+    private static final int HOVER_BORDER = 3;
+    /** La freccetta del focus da tastiera: larghezza e distanza dal testo. */
+    static final int FOCUS_ARROW_WIDTH = 6;
+    static final int FOCUS_ARROW_GAP = 10;
+
+    /** Freccia a pixel che punta a destra: il focus da tastiera, come il cursore dei menu dei cabinati. */
+    private static final int[][] FOCUS_ARROW = {
+        { 1,0,0 },
+        { 1,1,0 },
+        { 1,1,1 },
+        { 1,1,0 },
+        { 1,0,0 }
+    };
 
     private static final ArcadeButtonUI INSTANCE = new ArcadeButtonUI();
 
@@ -105,7 +119,11 @@ public class ArcadeButtonUI extends BasicButtonUI {
 
             boolean enabled = m.isEnabled();
             boolean pressed = m.isArmed() && m.isPressed();
-            boolean hot = enabled && (m.isRollover() || b.isFocusOwner());
+            // Mouse sopra e focus da tastiera si mostrano in modo diverso: all'apertura di una schermata il
+            // focus va al primo pulsante, e se avessero lo stesso aspetto quello sembrerebbe sempre "sotto il mouse".
+            // La freccetta del focus compare solo usando la tastiera: lo decide FocusIndicator.
+            boolean hot = enabled && m.isRollover();
+            boolean focused = FocusIndicator.shows(b);
             Variant v = m.isSelected() ? Variant.PRIMARY : variantOf(b);
 
             int w = c.getWidth() - DEPTH;
@@ -122,8 +140,16 @@ public class ArcadeButtonUI extends BasicButtonUI {
                 }
                 g.setColor(!enabled ? EDGE : hot ? CREAM_HOVER : CREAM);
                 g.fill(body);
-                scanlines(g, body, 0.10f);
-                text = enabled ? TEXT_DARK : TEXT_MUTED;
+                scanlines(g, body, hot ? 0.04f : 0.10f);
+                if (hot) {
+                    // mouse sopra: il crema si accende e compare un bordo rosso, come la scritta
+                    g.setStroke(new BasicStroke(HOVER_BORDER));
+                    g.setColor(SHADOW);
+                    double inset = HOVER_BORDER / 2.0;
+                    g.draw(new RoundRectangle2D.Double(off + inset, off + inset, w - HOVER_BORDER, h - HOVER_BORDER,
+                            ARC, ARC));
+                }
+                text = !enabled ? TEXT_MUTED : hot ? SHADOW : TEXT_DARK;
             } else {
                 g.setColor(pressed ? BODY_PRESSED : hot ? BODY_HOVER : BODY);
                 g.fill(body);
@@ -144,6 +170,9 @@ public class ArcadeButtonUI extends BasicButtonUI {
                 } finally {
                     gh.dispose();
                 }
+                if (focused) {
+                    paintFocusArrow(g, FOCUS_ARROW_GAP, h / 2.0, text);
+                }
             } else {
                 Font f = b.getFont();
                 g.setFont(f);
@@ -153,6 +182,9 @@ public class ArcadeButtonUI extends BasicButtonUI {
                 int ty = off + (h - fm.getHeight()) / 2 + fm.getAscent();
                 g.setColor(text);
                 g.drawString(s, tx, ty);
+                if (focused) {
+                    paintFocusArrow(g, tx - FOCUS_ARROW_GAP - FOCUS_ARROW_WIDTH, off + h / 2.0, text);
+                }
             }
         } finally {
             g.dispose();
@@ -173,6 +205,12 @@ public class ArcadeButtonUI extends BasicButtonUI {
     private static String label(AbstractButton b) {
         String t = b.getText();
         return t == null ? "" : t.toUpperCase();
+    }
+
+    /** La freccetta del focus con il bordo sinistro in x, centrata in verticale su cy. La usano anche le caselle. */
+    static void paintFocusArrow(Graphics2D g, double x, double cy, Color color) {
+        double height = PixelGlyphs.heightFor(FOCUS_ARROW, FOCUS_ARROW_WIDTH);
+        PixelGlyphs.draw(g, FOCUS_ARROW, x, cy - height / 2, FOCUS_ARROW_WIDTH, color);
     }
 
     /** Righe di scansione orizzontali sul corpo del pulsante, come sulle carte. */
