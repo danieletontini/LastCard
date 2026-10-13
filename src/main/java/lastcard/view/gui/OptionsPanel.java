@@ -1,6 +1,7 @@
 package lastcard.view.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -24,11 +25,23 @@ import lastcard.view.audio.AudioPlayer;
  */
 public class OptionsPanel extends ArcadeBackgroundPanel {
 
-    private static final float VOLUME_LABEL_SIZE = 10f;
+    // Le misure a grandezza normale, nella finestra da 960x640: a schermo intero crescono in proporzione.
+    private static final float TITLE_SIZE = 22f;
+    private static final float VOLUME_LABEL_SIZE = 14f;
+    /** Lo spazio fra lo slider e la scritta del volume sotto. */
+    private static final int VOLUME_LABEL_GAP = 12;
+    private static final int ROW_GAP = 14;
 
     private final Settings settings;
     private final JSlider volume;
     private final JLabel volumeLabel;
+    private final ArcadeTitle title;
+    private final JButton back;
+    private final Box.Filler backBalance;
+    private final JCheckBox fullScreen;
+    private final JCheckBox mute;
+    private final BorderLayout volumeLayout;
+    private final GridLayout columnLayout;
 
     public OptionsPanel(final Navigator navigator, final Settings settings, final MainWindow window,
             final AudioPlayer audio) {
@@ -36,7 +49,7 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         this.settings = settings;
 
         // In alto: Indietro e il titolo, come nella schermata delle regole.
-        JButton back = ButtonFactory.createButton("Indietro", ArcadeButtonUI.Variant.QUIET);
+        this.back = ButtonFactory.createButton("Indietro", ArcadeButtonUI.Variant.QUIET);
         back.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -47,11 +60,14 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.add(back, BorderLayout.WEST);
-        header.add(new ArcadeTitle(22f, "OPZIONI"), BorderLayout.CENTER);
+        this.title = new ArcadeTitle(TITLE_SIZE, "OPZIONI");
+        header.add(title, BorderLayout.CENTER);
         // Uno spazio vuoto largo quanto Indietro, a destra: così il titolo sta al centro della finestra.
-        header.add(Box.createHorizontalStrut(back.getPreferredSize().width), BorderLayout.EAST);
+        Dimension balance = new Dimension(back.getPreferredSize().width, 0);
+        this.backBalance = new Box.Filler(balance, balance, balance);
+        header.add(backBalance, BorderLayout.EAST);
 
-        final JCheckBox fullScreen = ButtonFactory.createCheckBox("Schermo intero");
+        this.fullScreen = ButtonFactory.createCheckBox("Schermo intero");
         fullScreen.setSelected(settings.isFullScreen());
         fullScreen.addActionListener(new ActionListener() {
             @Override
@@ -61,7 +77,7 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
             }
         });
 
-        final JCheckBox mute = ButtonFactory.createCheckBox("Muto");
+        this.mute = ButtonFactory.createCheckBox("Muto");
         mute.setSelected(settings.isMuted());
 
         this.volume = new JSlider(Settings.MIN_VOLUME, Settings.MAX_VOLUME, settings.getVolume());
@@ -95,13 +111,16 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         volumeLabel.setFont(ArcadeFont.of(VOLUME_LABEL_SIZE));
         volumeLabel.setForeground(ArcadeButtonUI.CREAM);
 
-        JPanel volumeBox = new JPanel(new BorderLayout());
+        // La scritta del volume sta sotto lo slider, staccata di VOLUME_LABEL_GAP.
+        this.volumeLayout = new BorderLayout(0, VOLUME_LABEL_GAP);
+        JPanel volumeBox = new JPanel(volumeLayout);
         volumeBox.setOpaque(false);
         volumeBox.add(volume, BorderLayout.CENTER);
         volumeBox.add(volumeLabel, BorderLayout.SOUTH);
 
         // La colonna al centro, come nel menu principale.
-        JPanel column = new JPanel(new GridLayout(0, 1, 0, 10));
+        this.columnLayout = new GridLayout(0, 1, 0, ROW_GAP);
+        JPanel column = new JPanel(columnLayout);
         column.setOpaque(false);
         column.add(fullScreen);
         column.add(mute);
@@ -112,6 +131,28 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
 
         add(header, BorderLayout.NORTH);
         add(center, BorderLayout.CENTER);
+
+        // A schermo intero la schermata è molto più grande di 960x640: testi e controlli la seguono.
+        ScreenScale.follow(this, this::applyScale);
+    }
+
+    // Tutte le misure moltiplicate per la stessa scala, come nel menu principale.
+    private void applyScale(float scale) {
+        title.setFontSize(TITLE_SIZE * scale);
+        back.setFont(ArcadeFont.of(ArcadeButtonUI.FONT_SIZE * scale));
+        Dimension balance = new Dimension(back.getPreferredSize().width, 0);
+        backBalance.changeShape(balance, balance, balance);
+
+        fullScreen.setFont(ArcadeFont.of(ArcadeCheckBoxUI.FONT_SIZE * scale));
+        mute.setFont(ArcadeFont.of(ArcadeCheckBoxUI.FONT_SIZE * scale));
+        // Lo slider cambia scala con una nuova UI; il volume e chi lo ascolta stanno nel modello, e restano.
+        volume.setUI(new ArcadeSliderUI(volume, scale));
+        volume.setOpaque(false);
+        volumeLabel.setFont(ArcadeFont.of(VOLUME_LABEL_SIZE * scale));
+        volumeLayout.setVgap(Math.round(VOLUME_LABEL_GAP * scale));
+        columnLayout.setVgap(Math.round(ROW_GAP * scale));
+        revalidate();
+        repaint();
     }
 
     private void updateVolumeLabel() {

@@ -24,11 +24,12 @@ import javax.swing.plaf.basic.BasicButtonUI;
  */
 public class ArcadeCheckBoxUI extends BasicButtonUI {
 
-    private static final float FONT_SIZE = 12f;
-    private static final int BOX = 24;
-    private static final int TEXT_GAP = 24;
-    private static final int HEIGHT = 36;
-    private static final int CHECK_WIDTH = 14;
+    /** Il corpo del testo a grandezza normale; più grande, riquadro e spazi crescono in proporzione. */
+    static final float FONT_SIZE = 16f;
+    private static final int BOX = 30;
+    private static final int TEXT_GAP = 32;
+    private static final int HEIGHT = 46;
+    private static final int CHECK_WIDTH = 18;
 
     /** Il segno di spunta, 7x6. */
     private static final int[][] CHECK = {
@@ -65,7 +66,9 @@ public class ArcadeCheckBoxUI extends BasicButtonUI {
         AbstractButton b = (AbstractButton) c;
         FontMetrics fm = b.getFontMetrics(b.getFont());
         int arrow = ArcadeButtonUI.FOCUS_ARROW_WIDTH + ArcadeButtonUI.FOCUS_ARROW_GAP;
-        return new Dimension(arrow + fm.stringWidth(label(b)) + TEXT_GAP + BOX + 2, HEIGHT);
+        float s = scaleOf(b);
+        return new Dimension(arrow + fm.stringWidth(label(b)) + Math.round((TEXT_GAP + BOX) * s) + 2,
+                Math.round(HEIGHT * s));
     }
 
     @Override
@@ -80,6 +83,8 @@ public class ArcadeCheckBoxUI extends BasicButtonUI {
             boolean focused = FocusIndicator.shows(b);
             int w = c.getWidth();
             double cy = c.getHeight() / 2.0;
+            double box = BOX * scaleOf(b);
+            double checkWidth = CHECK_WIDTH * scaleOf(b);
 
             Color text = !enabled ? ArcadeButtonUI.TEXT_DISABLED
                     : hot ? ArcadeButtonUI.CREAM_HOVER : ArcadeButtonUI.CREAM;
@@ -95,26 +100,31 @@ public class ArcadeCheckBoxUI extends BasicButtonUI {
             }
 
             // il riquadro, sul bordo destro
-            double bx = w - BOX - 1;
-            double by = cy - BOX / 2.0;
+            double bx = w - box - 1;
+            double by = cy - box / 2.0;
             g.setColor(hot ? ArcadeButtonUI.BODY_HOVER : ArcadeButtonUI.BODY);
-            g.fill(new Rectangle2D.Double(bx, by, BOX, BOX));
+            g.fill(new Rectangle2D.Double(bx, by, box, box));
             g.setStroke(new BasicStroke(2f));
             g.setColor(!enabled ? ArcadeButtonUI.EDGE : hot ? ArcadeButtonUI.CREAM : ArcadeButtonUI.EDGE);
-            g.draw(new Rectangle2D.Double(bx + 1, by + 1, BOX - 2, BOX - 2));
+            g.draw(new Rectangle2D.Double(bx + 1, by + 1, box - 2, box - 2));
 
             if (m.isSelected()) {
-                double checkHeight = PixelGlyphs.heightFor(CHECK, CHECK_WIDTH);
-                double x = bx + (BOX - CHECK_WIDTH) / 2.0;
-                double y = by + (BOX - checkHeight) / 2.0;
+                double checkHeight = PixelGlyphs.heightFor(CHECK, checkWidth);
+                double x = bx + (box - checkWidth) / 2.0;
+                double y = by + (box - checkHeight) / 2.0;
                 if (enabled) {
-                    PixelGlyphs.draw(g, CHECK, x + 2, y + 2, CHECK_WIDTH, ArcadeButtonUI.SHADOW);
+                    PixelGlyphs.draw(g, CHECK, x + 2, y + 2, checkWidth, ArcadeButtonUI.SHADOW);
                 }
-                PixelGlyphs.draw(g, CHECK, x, y, CHECK_WIDTH, enabled ? text : ArcadeButtonUI.TEXT_DISABLED);
+                PixelGlyphs.draw(g, CHECK, x, y, checkWidth, enabled ? text : ArcadeButtonUI.TEXT_DISABLED);
             }
         } finally {
             g.dispose();
         }
+    }
+
+    // Come per i pulsanti: per ingrandire una casella basta darle un font più grande.
+    private static float scaleOf(AbstractButton b) {
+        return Math.max(1f, b.getFont().getSize2D() / FONT_SIZE);
     }
 
     private static String label(AbstractButton b) {

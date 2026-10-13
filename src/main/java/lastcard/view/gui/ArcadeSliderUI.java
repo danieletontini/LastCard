@@ -16,18 +16,39 @@ import javax.swing.plaf.basic.BasicSliderUI;
  */
 public class ArcadeSliderUI extends BasicSliderUI {
 
-    private static final int TRACK_HEIGHT = 10;
-    private static final int THUMB_WIDTH = 14;
-    private static final int THUMB_HEIGHT = 24;
+    // Le misure a grandezza normale, moltiplicate per la scala.
+    private static final int WIDTH = 320;
+    private static final int TRACK_HEIGHT = 12;
+    private static final int THUMB_WIDTH = 16;
+    private static final int THUMB_HEIGHT = 28;
     private static final int THUMB_SHADOW = 3;
 
+    private final int width;
+    private final int trackHeight;
+    private final int thumbWidth;
+    private final int thumbHeight;
+
     public ArcadeSliderUI(JSlider slider) {
+        this(slider, 1f);
+    }
+
+    /** Uno slider più grande: per cambiare scala si installa una nuova ArcadeSliderUI con la scala voluta. */
+    public ArcadeSliderUI(JSlider slider, float scale) {
         super(slider);
+        this.width = Math.round(WIDTH * scale);
+        this.trackHeight = Math.round(TRACK_HEIGHT * scale);
+        this.thumbWidth = Math.round(THUMB_WIDTH * scale);
+        this.thumbHeight = Math.round(THUMB_HEIGHT * scale);
     }
 
     @Override
     protected Dimension getThumbSize() {
-        return new Dimension(THUMB_WIDTH + THUMB_SHADOW, THUMB_HEIGHT + THUMB_SHADOW);
+        return new Dimension(thumbWidth + THUMB_SHADOW, thumbHeight + THUMB_SHADOW);
+    }
+
+    @Override
+    public Dimension getPreferredHorizontalSize() {
+        return new Dimension(width, thumbHeight + THUMB_SHADOW + 4);
     }
 
     @Override
@@ -35,19 +56,19 @@ public class ArcadeSliderUI extends BasicSliderUI {
         Graphics2D g = (Graphics2D) g0.create();
         try {
             Rectangle track = trackRect;
-            double y = track.getCenterY() - TRACK_HEIGHT / 2.0;
-            Rectangle2D.Double bar = new Rectangle2D.Double(track.x, y, track.width, TRACK_HEIGHT);
+            double y = track.getCenterY() - trackHeight / 2.0;
+            Rectangle2D.Double bar = new Rectangle2D.Double(track.x, y, track.width, trackHeight);
             g.setColor(ArcadeButtonUI.BODY);
             g.fill(bar);
 
             // la parte piena arriva fino al centro del cursore
             double filled = thumbRect.getCenterX() - THUMB_SHADOW / 2.0 - track.x;
             g.setColor(slider.isEnabled() ? ArcadeButtonUI.CREAM : ArcadeButtonUI.EDGE);
-            g.fill(new Rectangle2D.Double(track.x, y, Math.max(0, filled), TRACK_HEIGHT));
+            g.fill(new Rectangle2D.Double(track.x, y, Math.max(0, filled), trackHeight));
 
             g.setStroke(new BasicStroke(2f));
             g.setColor(ArcadeButtonUI.EDGE);
-            g.draw(new Rectangle2D.Double(track.x + 1, y + 1, track.width - 2, TRACK_HEIGHT - 2));
+            g.draw(new Rectangle2D.Double(track.x + 1, y + 1, track.width - 2, trackHeight - 2));
         } finally {
             g.dispose();
         }
@@ -61,10 +82,10 @@ public class ArcadeSliderUI extends BasicSliderUI {
             double y = thumbRect.y;
             if (slider.isEnabled()) {
                 g.setColor(ArcadeButtonUI.SHADOW);
-                g.fill(new Rectangle2D.Double(x + THUMB_SHADOW, y + THUMB_SHADOW, THUMB_WIDTH, THUMB_HEIGHT));
+                g.fill(new Rectangle2D.Double(x + THUMB_SHADOW, y + THUMB_SHADOW, thumbWidth, thumbHeight));
             }
             g.setColor(slider.isEnabled() ? ArcadeButtonUI.CREAM : ArcadeButtonUI.EDGE);
-            g.fill(new Rectangle2D.Double(x, y, THUMB_WIDTH, THUMB_HEIGHT));
+            g.fill(new Rectangle2D.Double(x, y, thumbWidth, thumbHeight));
         } finally {
             g.dispose();
         }
