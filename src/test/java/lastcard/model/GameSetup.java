@@ -35,6 +35,23 @@ final class GameSetup {
 
     /** Come sopra, ma le carte da pescare dopo la distribuzione sono esattamente drawPile (anche nessuna). */
     static Game create(List<String> names, List<List<Card>> hands, Card firstCard, List<Card> drawPile) {
+        return create(GameRules.classic(), names, hands, firstCard, drawPile);
+    }
+
+    /** Partita avviata con le regole date, per esempio GameRules.noMercy(); si pescano riempitivi. */
+    static Game start(GameRules rules, List<String> names, List<List<Card>> hands, Card firstCard) {
+        return start(rules, names, hands, firstCard, Collections.nCopies(DRAW_PILE_SIZE, FILLER));
+    }
+
+    static Game start(GameRules rules, List<String> names, List<List<Card>> hands, Card firstCard,
+            List<Card> drawPile) {
+        Game game = create(rules, names, hands, firstCard, drawPile);
+        game.start();
+        return game;
+    }
+
+    static Game create(GameRules rules, List<String> names, List<List<Card>> hands, Card firstCard,
+            List<Card> drawPile) {
         List<Card> drawOrder = new ArrayList<>();
         for (List<Card> hand : hands) {
             if (hand.size() != HAND_SIZE) {
@@ -46,7 +63,7 @@ final class GameSetup {
         drawOrder.addAll(drawPile);
         // Deck pesca dalla fine della lista: va rovesciata perché la prima carta pescata sia la prima della lista.
         Collections.reverse(drawOrder);
-        return new Game(names, new Deck(drawOrder), false);
+        return new Game(names, rules, new Deck(drawOrder), false);
     }
 
     static Game start(List<String> names, List<List<Card>> hands, Card firstCard) {
