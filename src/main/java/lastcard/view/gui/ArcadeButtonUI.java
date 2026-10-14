@@ -33,11 +33,18 @@ import javax.swing.plaf.basic.BasicHTML;
  */
 public class ArcadeButtonUI extends BasicButtonUI {
 
-    /** Le varianti di aspetto. */
-    public enum Variant { PRIMARY, SECONDARY, QUIET }
+    /** Le varianti di aspetto. ALERT è rossa con il bordo crema: l'azione da non perdere, come Ultima! al tavolo. */
+    public enum Variant { PRIMARY, SECONDARY, QUIET, ALERT }
 
     /** Chiave della proprietà del pulsante che contiene la variante. */
     static final String VARIANT_KEY = "lastcard.arcadeVariant";
+    /** Chiave di un colore da mostrare in un quadratino prima del testo: i pulsanti della scelta del colore. */
+    static final String SWATCH_KEY = "lastcard.arcadeSwatch";
+
+    static final Color ALERT_HOVER = new Color(0xDC3E4D);
+    static final Color ALERT_SHADOW = new Color(0x6E1520);
+    static final Color ALERT_DISABLED = new Color(0x5A1A22);
+    static final Color ALERT_DISABLED_EDGE = new Color(0x8A5A5E);
 
     // Colori del tema, oltre a quelli delle carte in ArcadePalette.
     static final Color CREAM = new Color(0xF6E3AE);
@@ -108,6 +115,9 @@ public class ArcadeButtonUI extends BasicButtonUI {
         float scale = Math.max(1f, b.getFont().getSize2D() / FONT_SIZE);
         FontMetrics fm = b.getFontMetrics(b.getFont());
         int text = fm.stringWidth(label(b));
+        if (swatchOf(b) != null) {
+            text += fm.getAscent() * 3 / 2 + 4;
+        }
         return new Dimension(text + Math.round(2 * PAD_X * scale) + DEPTH, Math.round(HEIGHT * scale) + DEPTH);
     }
 
@@ -153,6 +163,19 @@ public class ArcadeButtonUI extends BasicButtonUI {
                             ARC, ARC));
                 }
                 text = !enabled ? TEXT_MUTED : hot ? SHADOW : TEXT_DARK;
+            } else if (v == Variant.ALERT) {
+                // disattivato resta rosso, ma scuro: si riconosce dov'è anche quando non si può premere
+                g.setColor(ALERT_SHADOW);
+                g.fill(new RoundRectangle2D.Double(DEPTH, DEPTH, w, h, ARC, ARC));
+                g.setColor(!enabled ? ALERT_DISABLED : hot ? ALERT_HOVER : SHADOW);
+                g.fill(body);
+                scanlines(g, body, 0.10f);
+                g.setStroke(new BasicStroke(HOVER_BORDER));
+                g.setColor(!enabled ? ALERT_DISABLED_EDGE : hot ? CREAM_HOVER : CREAM);
+                double inset = HOVER_BORDER / 2.0;
+                g.draw(new RoundRectangle2D.Double(off + inset, off + inset, w - HOVER_BORDER, h - HOVER_BORDER,
+                        ARC, ARC));
+                text = !enabled ? ALERT_DISABLED_EDGE : hot ? CREAM_HOVER : CREAM;
             } else {
                 g.setColor(pressed ? BODY_PRESSED : hot ? BODY_HOVER : BODY);
                 g.fill(body);
@@ -181,8 +204,21 @@ public class ArcadeButtonUI extends BasicButtonUI {
                 g.setFont(f);
                 FontMetrics fm = g.getFontMetrics();
                 String s = label(b);
-                int tx = off + (w - fm.stringWidth(s)) / 2;
+                Color swatch = swatchOf(b);
+                int swatchSize = swatch == null ? 0 : fm.getAscent();
+                int swatchGap = swatch == null ? 0 : swatchSize / 2 + 4;
+                int tx = off + (w - fm.stringWidth(s) - swatchSize - swatchGap) / 2 + swatchSize + swatchGap;
                 int ty = off + (h - fm.getHeight()) / 2 + fm.getAscent();
+                if (swatch != null) {
+                    // il quadratino del colore, con il bordo crema, prima del testo
+                    int sx = tx - swatchGap - swatchSize;
+                    int sy = ty - swatchSize;
+                    g.setColor(enabled ? swatch : EDGE);
+                    g.fillRect(sx, sy, swatchSize, swatchSize);
+                    g.setStroke(new BasicStroke(2f));
+                    g.setColor(text);
+                    g.drawRect(sx, sy, swatchSize, swatchSize);
+                }
                 g.setColor(text);
                 g.drawString(s, tx, ty);
                 if (focused) {
@@ -199,6 +235,11 @@ public class ArcadeButtonUI extends BasicButtonUI {
     static Variant variantOf(AbstractButton b) {
         Object v = b.getClientProperty(VARIANT_KEY);
         return v instanceof Variant ? (Variant) v : Variant.SECONDARY;
+    }
+
+    private static Color swatchOf(AbstractButton b) {
+        Object swatch = b.getClientProperty(SWATCH_KEY);
+        return swatch instanceof Color ? (Color) swatch : null;
     }
 
     private static boolean isHtml(AbstractButton b) {

@@ -52,7 +52,7 @@ public class ArcadeBackgroundPanel extends JPanel {
     /** Sfondo con immagine, per esempio {@link #MENU_BACKGROUND}; null per lo schermo in tinta unita. */
     public ArcadeBackgroundPanel(LayoutManager layout, String imageResource) {
         super(layout);
-        this.image = imageResource == null ? null : IMAGES.computeIfAbsent(imageResource, r -> load(r));
+        this.image = imageResource == null ? null : image(imageResource);
         setOpaque(true);
         int inset = MARGIN + PADDING;
         setBorder(new EmptyBorder(inset, inset, inset, inset));
@@ -102,6 +102,11 @@ public class ArcadeBackgroundPanel extends JPanel {
         int dy = (int) Math.round(MARGIN + (sh - dh) / 2);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.drawImage(image, dx, dy, dw, dh, null);
+    }
+
+    /** Un'immagine delle risorse, caricata una volta sola e condivisa; null se manca. La usa anche il tavolo. */
+    static BufferedImage image(String resource) {
+        return IMAGES.computeIfAbsent(resource, r -> load(r));
     }
 
     private static BufferedImage load(String resource) {
