@@ -13,19 +13,24 @@ import lastcard.view.MenuView;
 
 /**
  * Il controller del menu: dalle scelte di Nuova partita crea regole, giocatori e partita.
- * La partita viene creata ma non avviata: la avvierà il tavolo, quando ci sarà.
+ * Poi la affida al controller del tavolo (GuiGameController), che la avvia e la fa giocare.
  */
 public class AppController implements MenuActions {
 
     private static final String HUMAN_NAME = "Tu";
 
     private final MenuView view;
-    // L'ultima partita creata e le sue CPU, pronte per il tavolo.
+    private final TurnScheduler scheduler;
+    // L'ultima partita creata, le sue CPU e il controller che la sta giocando al tavolo.
     private Game game;
     private List<CpuPlayer> cpus;
+    private GuiGameController table;
 
-    public AppController(MenuView view) {
+    /** @param scheduler distanzia le mosse delle CPU al tavolo: nella GUI è un timer di Swing */
+    public AppController(MenuView view, TurnScheduler scheduler) {
         this.view = Objects.requireNonNull(view, "view");
+        this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+        this.table = null;
         this.game = null;
         this.cpus = new ArrayList<>();
     }
@@ -43,9 +48,15 @@ public class AppController implements MenuActions {
             newCpus.add(new CpuPlayer(name, new BasicCpuStrategy()));
         }
 
+        // Una partita lasciata a metà si ferma, così le sue CPU non continuano a giocare in sottofondo.
+        if (table != null) {
+            table.onLeaveTable();
+        }
         this.game = new Game(names, toRules(settings));
         this.cpus = newCpus;
+        this.table = new GuiGameController(game, view.table(), newCpus, HUMAN_NAME, scheduler);
         view.showTable(settings);
+        table.start();
     }
 
     /** Le regole che corrispondono alle impostazioni: classiche o No Mercy, con l'obiettivo di punti scelto. */

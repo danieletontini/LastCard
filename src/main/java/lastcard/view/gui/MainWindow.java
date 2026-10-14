@@ -7,7 +7,9 @@ import javax.swing.JFrame;
 import lastcard.controller.AppController;
 import lastcard.controller.GameSettings;
 import lastcard.view.MenuView;
+import lastcard.view.TableView;
 import lastcard.view.audio.AudioPlayer;
+import lastcard.view.audio.GameSounds;
 import lastcard.view.audio.Music;
 import lastcard.view.audio.SoundEffect;
 
@@ -18,7 +20,7 @@ public class MainWindow extends JFrame implements MenuView {
     private static final int HEIGHT = 640;
 
     private final Navigator navigator;
-    private final TablePlaceholderPanel table;
+    private final TablePanel table;
 
     public MainWindow() {
         super("Ultima Carta");
@@ -32,9 +34,11 @@ public class MainWindow extends JFrame implements MenuView {
         ButtonFactory.setClickSound(() -> audio.play(SoundEffect.BUTTON_CLICK));
 
         this.navigator = new Navigator();
-        this.table = new TablePlaceholderPanel(navigator);
-        // Il controller del menu crea la partita e poi chiede a questa finestra di mostrare il tavolo.
-        AppController controller = new AppController(this);
+        // Il tavolo passa gli eventi della partita anche ai suoni: la partita non sa che esiste l'audio.
+        this.table = new TablePanel(navigator, new GameSounds(audio::play));
+        // Il controller del menu crea la partita, la affida al controller del tavolo e chiede di mostrare il tavolo.
+        // Le mosse delle CPU sono distanziate da un timer di Swing.
+        AppController controller = new AppController(this, new SwingTurnScheduler());
         navigator.register(Screen.MAIN_MENU, new MainMenuPanel(navigator));
         navigator.register(Screen.PLAY, new PlayPanel(navigator));
         navigator.register(Screen.NEW_GAME, new NewGamePanel(navigator, controller));
@@ -55,8 +59,12 @@ public class MainWindow extends JFrame implements MenuView {
     }
 
     @Override
+    public TableView table() {
+        return table;
+    }
+
+    @Override
     public void showTable(GameSettings settings) {
-        table.showSettings(settings);
         navigator.show(Screen.TABLE);
     }
 
