@@ -160,7 +160,22 @@ public class Game {
         return activeColor;
     }
 
+    /** Lo stato visto da chi deve agire: è quello che serve per decidere la prossima mossa. */
     public VisibleState getVisibleState() {
+        return getVisibleStateFor(getActingPlayer().getName());
+    }
+
+    /**
+     * Lo stato visto da un giocatore preciso, anche quando non tocca a lui: serve al tavolo grafico,
+     * che mostra sempre la mano del giocatore umano mentre agiscono le CPU.
+     * canPass è vero solo se chi guarda è anche chi deve agire.
+     */
+    public VisibleState getVisibleStateFor(String viewerName) {
+        Objects.requireNonNull(viewerName, "viewerName");
+        Player viewer = players.stream()
+                .filter(player -> player.getName().equals(viewerName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown player: " + viewerName));
         Player acting = getActingPlayer();
         List<PlayerSummary> summaries = new ArrayList<>();
         for (Player player : players) {
@@ -168,8 +183,8 @@ public class Game {
                     player.isEliminated(), player.getScore()));
         }
         Card top = discardPile.isEmpty() ? null : discardPile.top();
-        return new VisibleState(top, activeColor, acting.getName(), acting.getHand(), summaries, state,
-                drawnCard != null, pendingDraw);
+        return new VisibleState(top, activeColor, acting.getName(), viewer.getHand(), summaries, state,
+                drawnCard != null && viewer == acting, pendingDraw);
     }
 
     // Durante la scelta del colore o del bersaglio dello scambio deve agire chi ha giocato la carta,
