@@ -32,4 +32,7 @@ public interface TableView extends GameObserver {
 
     /** La partita è finita. */
     void showWinner(String winnerName);
+
+    /** Partita a punti: la mano è chiusa. Mostra i punteggi; la mano successiva parte con TableActions.onNextHand(). */
+    void showHandOver(List<PlayerSummary> players);
 }

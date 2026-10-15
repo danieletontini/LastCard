@@ -120,6 +120,15 @@ public class GuiGameController implements TableActions {
     }
 
     @Override
+    public void onNextHand() {
+        if (stopped || game.getState() != GameState.HAND_OVER) {
+            return;
+        }
+        game.startNextHand();
+        afterMove();
+    }
+
+    @Override
     public void onLeaveTable() {
         stopped = true;
         scheduler.cancel();
@@ -128,7 +137,7 @@ public class GuiGameController implements TableActions {
 
     // Una mossa del giocatore umano: solo quando tocca a lui. Se il modello la rifiuta, il motivo va al tavolo.
     private void perform(Move move, String errorMessage) {
-        if (stopped || game.isFinished()) {
+        if (stopped || isHandClosed()) {
             return;
         }
         if (!game.getVisibleState().currentPlayerName().equals(humanName)) {
@@ -156,6 +165,11 @@ public class GuiGameController implements TableActions {
             game.getWinner().ifPresent(winner -> view.showWinner(winner.getName()));
             return;
         }
+        // Partita a punti: la mano è chiusa senza raggiungere l'obiettivo. La prossima parte da onNextHand().
+        if (state.state() == GameState.HAND_OVER) {
+            view.showHandOver(state.players());
+            return;
+        }
 
         CpuPlayer cpu = cpus.get(state.currentPlayerName());
         if (cpu != null) {
@@ -174,16 +188,21 @@ public class GuiGameController implements TableActions {
     // Una mossa della CPU: di solito una sola mossa, oppure Ultima! seguita dalla carta.
     // Dopo una pescata o un jolly la stessa CPU resta di turno: la sua mossa seguente arriva dopo un'altra attesa.
     private void playCpuMove(CpuPlayer cpu) {
-        if (stopped || game.isFinished()) {
+        if (stopped || isHandClosed()) {
             return;
         }
         for (Move move : cpu.decide(game.getVisibleState())) {
-            if (game.isFinished()) {
+            if (isHandClosed()) {
                 break;
             }
             game.execute(move);
         }
         afterMove();
+    }
+
+    // La mano è chiusa: è finita la partita oppure, nella partita a punti, si attende la mano successiva.
+    private boolean isHandClosed() {
+        return game.isFinished() || game.getState() == GameState.HAND_OVER;
     }
 
     // Con chi si può scambiare la mano: tutti tranne chi sceglie e gli eliminati.

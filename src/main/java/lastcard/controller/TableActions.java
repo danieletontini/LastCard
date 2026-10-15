@@ -26,6 +26,9 @@ public interface TableActions {
     /** No Mercy, scambio 7: l'avversario scelto nel form. */
     void onSwapTargetChosen(String targetName);
 
+    /** Partita a punti: dopo i punteggi di fine mano, si distribuisce la mano successiva. */
+    void onNextHand();
+
     /** Si lascia il tavolo: la partita si ferma e le CPU smettono di giocare. */
     void onLeaveTable();
 }

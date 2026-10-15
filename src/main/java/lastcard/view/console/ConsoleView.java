@@ -157,6 +157,20 @@ public class ConsoleView implements GameView, GameObserver {
         System.out.println("*** " + name + " ha vinto la partita! ***");
     }
 
+    @Override
+    public void showHandOver(List<PlayerSummary> players) {
+        System.out.println();
+        System.out.println("── Fine della mano: punteggi ──");
+        for (PlayerSummary player : players) {
+            System.out.println("  " + player.name() + ": " + player.score() + " punti");
+        }
+        System.out.println("Premi Invio per iniziare la prossima mano.");
+        // Con l'input chiuso (Ctrl+D) non si aspetta: la partita continua e il ciclo dei comandi si ferma da solo.
+        if (in.hasNextLine()) {
+            in.nextLine();
+        }
+    }
+
     // Una riga per ogni cosa che succede nella partita: così si vede anche cosa fanno le CPU nei loro turni.
     @Override
     public void update(GameEvent event) {

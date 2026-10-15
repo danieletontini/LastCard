@@ -229,6 +229,30 @@ public class TablePanel extends JPanel implements TableView {
     }
 
     @Override
+    public void showHandOver(List<PlayerSummary> players) {
+        List<String> scores = new ArrayList<>();
+        for (PlayerSummary player : players) {
+            String name = player.name().equals(viewer) ? "Tu" : player.name();
+            scores.add(name + " " + player.score());
+        }
+        Runnable nextHand = new Runnable() {
+            @Override
+            public void run() {
+                actions.onNextHand();
+            }
+        };
+        Runnable menu = new Runnable() {
+            @Override
+            public void run() {
+                leaveTo(Screen.MAIN_MENU);
+            }
+        };
+        overlay.showMessage("MANO FINITA", "Punti: " + String.join(" · ", scores),
+                List.of("Prossima mano", "Menu"), List.of(nextHand, menu), scale());
+        repaint();
+    }
+
+    @Override
     public void update(GameEvent event) {
         if (sounds != null) {
             sounds.update(event);
@@ -521,6 +545,9 @@ public class TablePanel extends JPanel implements TableView {
         Color color;
         if (state.state() == GameState.FINISHED) {
             turn = "PARTITA FINITA";
+            color = ArcadeButtonUI.CREAM;
+        } else if (state.state() == GameState.HAND_OVER) {
+            turn = "MANO FINITA";
             color = ArcadeButtonUI.CREAM;
         } else if (isActing()) {
             turn = turnText();

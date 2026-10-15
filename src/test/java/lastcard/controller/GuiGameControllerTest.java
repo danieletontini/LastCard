@@ -103,6 +103,10 @@ class GuiGameControllerTest {
         }
 
         @Override
+        public void showHandOver(List<PlayerSummary> players) {
+        }
+
+        @Override
         public void update(GameEvent event) {
             events.add(event);
         }

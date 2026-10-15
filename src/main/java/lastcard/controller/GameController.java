@@ -127,6 +127,14 @@ public class GameController {
             }
             return;
         }
+        // Partita a punti: la mano è chiusa ma nessuno ha raggiunto l'obiettivo. Si mostrano i punteggi,
+        // poi si distribuisce la mano successiva, che può iniziare con il turno di una CPU.
+        if (game.getState() == GameState.HAND_OVER) {
+            view.showHandOver(game.getVisibleState().players());
+            game.startNextHand();
+            showOutcome();
+            return;
+        }
         VisibleState state = game.getVisibleState();
         view.showState(state);
         if (state.state() == GameState.AWAITING_COLOR || state.state() == GameState.AWAITING_ROULETTE_COLOR) {
@@ -151,19 +159,24 @@ public class GameController {
     // Finché deve agire una CPU, le si chiede cosa fare e si eseguono le sue mosse.
     // Dopo una pescata o un jolly la stessa CPU resta di turno: il ciclo la richiama con il nuovo stato.
     private void playCpuTurns() {
-        while (!game.isFinished()) {
+        while (!isHandClosed()) {
             CpuPlayer cpu = cpus.get(actingPlayerName());
             if (cpu == null) {
                 return;     // tocca a un umano
             }
             List<Move> moves = cpu.decide(game.getVisibleState());
             for (Move move : moves) {
-                if (game.isFinished()) {
+                if (isHandClosed()) {
                     return;
                 }
                 game.execute(move);
             }
         }
+    }
+
+    // La mano è chiusa: è finita la partita oppure, nella partita a punti, si attende la mano successiva.
+    private boolean isHandClosed() {
+        return game.isFinished() || game.getState() == GameState.HAND_OVER;
     }
 
     // Chi deve agire ora: dopo un +4 è chi ha giocato la carta, non il giocatore di turno.
