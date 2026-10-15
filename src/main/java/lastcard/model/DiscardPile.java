@@ -56,4 +56,11 @@ public class DiscardPile {
         cards.add(top);
         return rest;
     }
+
+    /** Toglie e restituisce tutte le carte, cima compresa: serve a fine mano nella partita a punti. */
+    public List<Card> takeAll() {
+        List<Card> all = new ArrayList<>(cards);
+        cards.clear();
+        return all;
+    }
 }

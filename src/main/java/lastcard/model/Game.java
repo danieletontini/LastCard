@@ -102,7 +102,36 @@ public class Game {
         if (state != GameState.NOT_STARTED) {
             throw new IllegalStateException("The game has already started.");
         }
+        dealHand();
+    }
 
+    /** Partita a punti: dopo una mano chiusa senza raggiungere l'obiettivo, si rimescola e si gioca la successiva. */
+    public void startNextHand() {
+        if (state != GameState.HAND_OVER) {
+            throw new IllegalStateException("The hand is not over.");
+        }
+        collectCards();
+        direction = Direction.CLOCKWISE;
+        activeColor = null;
+        lastPlayer = null;
+        drawnCard = null;
+        pendingDraw = 0;
+        rouletteVictim = null;
+        winner = null;
+        dealHand();
+    }
+
+    // Le mani di tutti e gli scarti, cima compresa, tornano nel mazzo. Il punteggio resta.
+    private void collectCards() {
+        for (Player player : players) {
+            deck.addCards(player.takeHand());
+            player.resetLastCardCall();
+        }
+        deck.addCards(discardPile.takeAll());
+    }
+
+    // Mescola, dà 7 carte a testa e scopre la prima carta: serve sia alla prima mano sia alle successive.
+    private void dealHand() {
         if (shuffleOnStart) {
             deck.shuffle();
         }

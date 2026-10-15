@@ -49,5 +49,13 @@ public class Deck {
         cards.addAll(discardPile.takeAllButTop());
         shuffle();
     }
-    
+
+    // Partita a punti: a fine mano le carte delle mani e degli scarti tornano nel mazzo. Non mescola.
+    public void addCards(List<Card> added) {
+        Objects.requireNonNull(added, "added");
+        for (Card card : added) {
+            cards.add(Objects.requireNonNull(card, "card"));
+        }
+    }
+
 }
