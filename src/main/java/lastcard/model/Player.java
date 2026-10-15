@@ -82,6 +82,14 @@ public class Player {
         }
     }
 
+    // Partita a punti: i punti presi chiudendo una mano si sommano a quelli delle mani precedenti.
+    void addScore(int points) {
+        if (points < 0) {
+            throw new IllegalArgumentException("points cannot be negative.");
+        }
+        score = score + points;
+    }
+
     public int handPoints() {
         return hand.stream().mapToInt(Card::points).sum();
     }

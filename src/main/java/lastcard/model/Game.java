@@ -475,7 +475,7 @@ public class Game {
 
     // Il turno di chi ha giocato è finito: se è rimasto con una carta senza aver dichiarato Ultima!, paga la penalità.
     private void endTurnAfterPlay(Player player) {
-        if (state == GameState.FINISHED) {
+        if (isHandClosed()) {
             return;
         }
         if (player.getHand().size() == 1 && !player.hasCalledLastCard()) {
@@ -608,11 +608,41 @@ public class Game {
         return true;
     }
 
+    // Con una mano sola la partita finisce qui. Nella partita a punti chi chiude la mano prende i punti
+    // delle carte rimaste agli avversari (gli eliminati hanno già rimesso le loro negli scarti):
+    // se raggiunge l'obiettivo la partita è finita, altrimenti si attende la prossima mano.
     private void finishHand(Player handWinner) {
         winner = handWinner;
-        state = GameState.FINISHED;
         pendingDraw = 0;
-        notifyObservers(GameEvent.gameWon(handWinner.getName()));
+        drawnCard = null;
+        rouletteVictim = null;
+
+        if (rules.pointsToWin() == 0) {
+            state = GameState.FINISHED;
+            notifyObservers(GameEvent.gameWon(handWinner.getName()));
+            return;
+        }
+
+        int points = 0;
+        for (Player player : players) {
+            if (player != handWinner) {
+                points = points + player.handPoints();
+            }
+        }
+        handWinner.addScore(points);
+        notifyObservers(GameEvent.handWon(handWinner.getName(), points));
+
+        if (handWinner.getScore() >= rules.pointsToWin()) {
+            state = GameState.FINISHED;
+            notifyObservers(GameEvent.gameWon(handWinner.getName()));
+        } else {
+            state = GameState.HAND_OVER;
+        }
+    }
+
+    // La mano è chiusa: o è finita la partita, o si attende la prossima mano.
+    private boolean isHandClosed() {
+        return state == GameState.FINISHED || state == GameState.HAND_OVER;
     }
 
     // Ultima! si dichiara durante il proprio turno, prima di giocare la penultima carta o mentre si sceglie il colore.
@@ -668,7 +698,7 @@ public class Game {
 
     public void awaitColorChoice() {
         // Una penalità può aver eliminato l'ultimo avversario: la mano è già chiusa, non c'è colore da scegliere.
-        if (state == GameState.FINISHED) {
+        if (isHandClosed()) {
             return;
         }
         ensureInProgress();
