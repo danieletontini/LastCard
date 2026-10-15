@@ -1,5 +1,6 @@
 package lastcard.view.gui;
 
+import java.util.EnumMap;
 import java.util.Map;
 
 import lastcard.controller.GameGoal;
@@ -16,16 +17,30 @@ final class ChoiceLabels {
             GameMode.CLASSIC, "108 carte, regole ufficiali. Le carte pesca non si sommano.",
             GameMode.NO_MERCY, "168 carte, penalità che si sommano, eliminazione a 25 carte.");
 
-    static final Map<GameGoal, String> GOALS = Map.of(
-            GameGoal.SINGLE_HAND, "Mano singola",
-            GameGoal.POINTS_100, "100 punti",
-            GameGoal.POINTS_500, "500 punti");
-
-    static final Map<GameGoal, String> GOAL_DESCRIPTIONS = Map.of(
-            GameGoal.SINGLE_HAND, "Vince chi resta per primo senza carte.",
-            GameGoal.POINTS_100, "Si giocano più mani: vince chi arriva per primo a 100 punti.",
-            GameGoal.POINTS_500, "Si giocano più mani: vince chi arriva per primo a 500 punti.");
-
     private ChoiceLabels() {
+    }
+
+    /** "Mano singola" oppure "100 punti", "1000 punti"...: i punti cambiano con la modalità. */
+    static String goal(GameGoal goal, GameMode mode) {
+        if (goal == GameGoal.SINGLE_HAND) {
+            return "Mano singola";
+        }
+        return goal.points(mode) + " punti";
+    }
+
+    /** Le etichette di tutti gli obiettivi per la modalità data, per i pulsanti di Nuova partita. */
+    static Map<GameGoal, String> goals(GameMode mode) {
+        Map<GameGoal, String> labels = new EnumMap<>(GameGoal.class);
+        for (GameGoal goal : GameGoal.values()) {
+            labels.put(goal, goal(goal, mode));
+        }
+        return labels;
+    }
+
+    static String goalDescription(GameGoal goal, GameMode mode) {
+        if (goal == GameGoal.SINGLE_HAND) {
+            return "Vince chi resta per primo senza carte.";
+        }
+        return "Si giocano più mani: vince chi arriva per primo a " + goal.points(mode) + " punti.";
     }
 }

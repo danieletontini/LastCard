@@ -64,6 +64,18 @@ public class ChoiceGroup<E extends Enum<E>> extends JPanel {
         selection = value;
     }
 
+    /** Cambia le etichette dei pulsanti, per esempio i punti dell'obiettivo quando cambia la modalità. */
+    public void setLabels(Map<E, String> labels) {
+        Objects.requireNonNull(labels, "labels");
+        for (Map.Entry<E, JToggleButton> entry : buttons.entrySet()) {
+            String label = labels.get(entry.getKey());
+            if (label == null) {
+                throw new IllegalArgumentException("No label for " + entry.getKey());
+            }
+            entry.getValue().setText(label);
+        }
+    }
+
     /** Chi ascolta viene avvisato quando l'utente cambia scelta. */
     public void addActionListener(ActionListener listener) {
         listeners.add(Objects.requireNonNull(listener, "listener"));

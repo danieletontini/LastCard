@@ -51,7 +51,10 @@ public record GameRules(
         return new GameRules(true, 25, true, true, false, true, 0, DeckType.NO_MERCY);
     }
 
-    /** Le stesse regole con un altro obiettivo di punti: serve alla schermata Nuova partita (100 o 500). */
+    /**
+     * Le stesse regole con un altro obiettivo di punti: serve alla schermata Nuova partita
+     * (100 o 500 nella classica, 1000 o 2000 nel No Mercy).
+     */
     public GameRules withPointsToWin(int points) {
         return new GameRules(drawStacking, eliminationThreshold, sevenSwap, zeroRotation,
                 jumpIn, drawUntilPlayable, points, deck);

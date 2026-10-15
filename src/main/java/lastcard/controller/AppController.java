@@ -67,7 +67,7 @@ public class AppController implements MenuActions {
         } else {
             base = GameRules.classic();
         }
-        return base.withPointsToWin(settings.goal().points());
+        return base.withPointsToWin(settings.goal().points(settings.mode()));
     }
 
     /** La partita creata con l'ultimo Inizia, se c'è. */

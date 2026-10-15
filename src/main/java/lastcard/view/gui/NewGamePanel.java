@@ -56,7 +56,8 @@ public class NewGamePanel extends JPanel {
 
         // Le scelte, con i valori iniziali: Classica, 1 avversario, Mano singola.
         this.modeGroup = new ChoiceGroup<>(GameMode.values(), ChoiceLabels.MODES, GameMode.CLASSIC);
-        this.goalGroup = new ChoiceGroup<>(GameGoal.values(), ChoiceLabels.GOALS, GameGoal.SINGLE_HAND);
+        this.goalGroup = new ChoiceGroup<>(GameGoal.values(), ChoiceLabels.goals(GameMode.CLASSIC),
+                GameGoal.SINGLE_HAND);
         this.modeDescription = new JLabel();
         this.goalDescription = new JLabel();
         this.opponentsValue = new JLabel("", SwingConstants.CENTER);
@@ -151,7 +152,9 @@ public class NewGamePanel extends JPanel {
         GameGoal goal = goalGroup.getSelection();
 
         modeDescription.setText(ChoiceLabels.MODE_DESCRIPTIONS.get(mode));
-        goalDescription.setText(ChoiceLabels.GOAL_DESCRIPTIONS.get(goal));
+        // I punti dell'obiettivo dipendono dalla modalità: le etichette si riscrivono a ogni scelta.
+        goalGroup.setLabels(ChoiceLabels.goals(mode));
+        goalDescription.setText(ChoiceLabels.goalDescription(goal, mode));
 
         opponentsValue.setText(String.valueOf(opponents));
         playersAtTable.setText((opponents + 1) + " giocatori al tavolo");
@@ -164,7 +167,7 @@ public class NewGamePanel extends JPanel {
         } else {
             opponentsText = opponents + " avversari";
         }
-        summary.setText(ChoiceLabels.MODES.get(mode) + " / " + opponentsText + " / " + ChoiceLabels.GOALS.get(goal));
+        summary.setText(ChoiceLabels.MODES.get(mode) + " / " + opponentsText + " / " + ChoiceLabels.goal(goal, mode));
     }
 
     private GameSettings currentSettings() {

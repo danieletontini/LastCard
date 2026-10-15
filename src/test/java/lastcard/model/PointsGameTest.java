@@ -244,6 +244,6 @@ class PointsGameTest {
 
     @Test
     void wholeNoMercyPointGamesReachTheGoal() {
-        playWholePointGames(GameRules.noMercy(), 500);
+        playWholePointGames(GameRules.noMercy(), 1000);
     }
 }
