@@ -28,6 +28,9 @@ public class Game {
     private Player rouletteVictim;
     // Chi ha chiuso la mano: ha finito le carte oppure è l'ultimo rimasto dopo le eliminazioni.
     private Player winner;
+    // Partita a punti: i punti delle carte che gli eliminati avevano in mano quando sono usciti dalla mano.
+    // Le loro carte tornano subito negli scarti, quindi vanno contati prima: li prende chi chiude la mano.
+    private int eliminatedPoints;
     private final boolean shuffleOnStart;
     private final List<GameObserver> observers;
 
@@ -80,6 +83,7 @@ public class Game {
         this.pendingDraw = 0;
         this.rouletteVictim = null;
         this.winner = null;
+        this.eliminatedPoints = 0;
         this.shuffleOnStart = shuffleOnStart;
         this.observers = new ArrayList<>();
     }
@@ -118,14 +122,17 @@ public class Game {
         pendingDraw = 0;
         rouletteVictim = null;
         winner = null;
+        eliminatedPoints = 0;
         dealHand();
     }
 
     // Le mani di tutti e gli scarti, cima compresa, tornano nel mazzo. Il punteggio resta.
+    // Gli eliminati della mano chiusa rientrano: l'eliminazione vale per una mano sola.
     private void collectCards() {
         for (Player player : players) {
             deck.addCards(player.takeHand());
             player.resetLastCardCall();
+            player.rejoin();
         }
         deck.addCards(discardPile.takeAll());
     }
@@ -629,6 +636,7 @@ public class Game {
         if (threshold == 0 || player.isEliminated() || player.getHand().size() < threshold) {
             return false;
         }
+        eliminatedPoints = eliminatedPoints + player.handPoints();
         discardPile.addUnderTop(player.eliminate());
         notifyObservers(GameEvent.playerEliminated(player.getName()));
         if (activePlayerCount() == 1) {
@@ -638,7 +646,7 @@ public class Game {
     }
 
     // Con una mano sola la partita finisce qui. Nella partita a punti chi chiude la mano prende i punti
-    // delle carte rimaste agli avversari (gli eliminati hanno già rimesso le loro negli scarti):
+    // delle carte rimaste agli avversari, più quelli delle mani degli eliminati contati quando sono usciti:
     // se raggiunge l'obiettivo la partita è finita, altrimenti si attende la prossima mano.
     private void finishHand(Player handWinner) {
         winner = handWinner;
@@ -652,7 +660,7 @@ public class Game {
             return;
         }
 
-        int points = 0;
+        int points = eliminatedPoints;
         for (Player player : players) {
             if (player != handWinner) {
                 points = points + player.handPoints();

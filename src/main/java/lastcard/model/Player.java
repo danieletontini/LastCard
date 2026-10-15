@@ -69,6 +69,11 @@ public class Player {
         return takeHand();
     }
 
+    // Partita a punti: l'eliminazione vale per una mano sola, alla mano successiva si rientra in gioco.
+    void rejoin() {
+        eliminated = false;
+    }
+
     // Toglie e restituisce tutta la mano: serve allo scambio del 7 e alla rotazione dello 0.
     List<Card> takeHand() {
         List<Card> cards = new ArrayList<>(hand);

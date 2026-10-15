@@ -71,6 +71,9 @@ class GuiGameControllerTest {
         final List<GameEvent> events = new ArrayList<>();
         String winner;
         String viewer;
+        // Partita a punti: il form di fine mano è aperto, e quante volte è stato mostrato.
+        boolean handOver;
+        int handsOver;
 
         @Override
         public void reset(String viewerName, TableActions actions) {
@@ -104,6 +107,8 @@ class GuiGameControllerTest {
 
         @Override
         public void showHandOver(List<PlayerSummary> players) {
+            handOver = true;
+            handsOver++;
         }
 
         @Override
@@ -262,5 +267,31 @@ class GuiGameControllerTest {
             assertTrue(s.table().errors.isEmpty(), "mosse rifiutate con seme " + seed + ": " + s.table().errors);
         }
         assertTrue(colorChoices > 0, "in 60 partite l'umano deve aver scelto almeno un colore dal form");
+    }
+
+    @Test
+    void pointGamesGoOnHandAfterHandFromTheTable() {
+        int handsOver = 0;
+        for (long seed = 0; seed < 30; seed++) {
+            GameRules base = seed % 2 == 0 ? GameRules.classic() : GameRules.noMercy();
+            Setup s = start(1 + (int) (seed % 4), base.withPointsToWin(200), seed);
+            CpuPlayer brain = new CpuPlayer(HUMAN, new BasicCpuStrategy());
+            for (int step = 0; step < 50_000 && s.table().winner == null; step++) {
+                if (s.table().handOver) {
+                    // A mano chiusa nessuno muove finché non si preme "Prossima mano".
+                    assertNull(s.scheduler().task, "con il form di fine mano aperto le CPU aspettano");
+                    s.table().handOver = false;
+                    s.controller().onNextHand();
+                } else if (s.scheduler().task != null) {
+                    s.scheduler().runPending();
+                } else {
+                    playHuman(s, brain);
+                }
+            }
+            assertNotNull(s.table().winner, "la partita a punti con seme " + seed + " non finisce");
+            assertTrue(s.table().errors.isEmpty(), "mosse rifiutate con seme " + seed + ": " + s.table().errors);
+            handsOver += s.table().handsOver;
+        }
+        assertTrue(handsOver > 0, "in 30 partite a 200 punti almeno una mano deve chiudersi senza raggiungere l'obiettivo");
     }
 }
