@@ -33,7 +33,7 @@ import lastcard.view.TableView;
 public class GuiGameController implements TableActions {
 
     /** Quanto aspetta una CPU prima di ogni sua mossa. */
-    public static final int CPU_MOVE_DELAY_MILLIS = 1000;
+    public static final int CPU_MOVE_DELAY_MILLIS = 2000;
 
     private final Game game;
     private final TableView view;

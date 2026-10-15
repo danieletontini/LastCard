@@ -167,14 +167,14 @@ class GuiGameControllerTest {
     }
 
     @Test
-    void everyCpuMoveWaitsOneSecond() {
+    void everyCpuMoveWaitsTwoSeconds() {
         Setup s = start(3, GameRules.classic(), 1);
         CpuPlayer brain = new CpuPlayer(HUMAN, new BasicCpuStrategy());
         runCpusUntilHuman(s);
         playHuman(s, brain);
 
         if (s.scheduler().task != null) {
-            assertEquals(1000, s.scheduler().delay);
+            assertEquals(2000, s.scheduler().delay);
             String waiting = s.table().state.currentPlayerName();
             assertTrue(waiting.startsWith("CPU"), "dopo la mossa dell'umano tocca a una CPU, che aspetta");
         }

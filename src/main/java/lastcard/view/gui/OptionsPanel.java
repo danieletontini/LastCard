@@ -1,13 +1,11 @@
 package lastcard.view.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -31,24 +29,26 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
     /** Lo spazio fra lo slider e la scritta del volume sotto. */
     private static final int VOLUME_LABEL_GAP = 12;
     private static final int ROW_GAP = 14;
+    /** Lo spazio fra il titolo e le opzioni sotto. */
+    private static final int TITLE_GAP = 40;
 
     private final Settings settings;
     private final JSlider volume;
     private final JLabel volumeLabel;
     private final ArcadeTitle title;
     private final JButton back;
-    private final Box.Filler backBalance;
     private final JCheckBox fullScreen;
     private final JCheckBox mute;
     private final BorderLayout volumeLayout;
     private final GridLayout columnLayout;
+    private final BorderLayout titleLayout;
 
     public OptionsPanel(final Navigator navigator, final Settings settings, final MainWindow window,
             final AudioPlayer audio) {
         super(new BorderLayout(), MENU_BACKGROUND);
         this.settings = settings;
 
-        // In alto: Indietro e il titolo, come nella schermata delle regole.
+        // In alto a sinistra: Indietro. Il titolo sta al centro, sopra le opzioni.
         this.back = ButtonFactory.createButton("Indietro", ArcadeButtonUI.Variant.QUIET);
         back.addActionListener(new ActionListener() {
             @Override
@@ -61,11 +61,6 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         header.setOpaque(false);
         header.add(back, BorderLayout.WEST);
         this.title = new ArcadeTitle(TITLE_SIZE, "OPZIONI");
-        header.add(title, BorderLayout.CENTER);
-        // Uno spazio vuoto largo quanto Indietro, a destra: così il titolo sta al centro della finestra.
-        Dimension balance = new Dimension(back.getPreferredSize().width, 0);
-        this.backBalance = new Box.Filler(balance, balance, balance);
-        header.add(backBalance, BorderLayout.EAST);
 
         this.fullScreen = ButtonFactory.createCheckBox("Schermo intero");
         fullScreen.setSelected(settings.isFullScreen());
@@ -125,9 +120,15 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
         column.add(fullScreen);
         column.add(mute);
         column.add(volumeBox);
+        // Il titolo appena sopra la colonna, staccato di TITLE_GAP: il blocco intero sta al centro della finestra.
+        this.titleLayout = new BorderLayout(0, TITLE_GAP);
+        JPanel titled = new JPanel(titleLayout);
+        titled.setOpaque(false);
+        titled.add(title, BorderLayout.NORTH);
+        titled.add(column, BorderLayout.CENTER);
         JPanel center = new JPanel(new GridBagLayout());
         center.setOpaque(false);
-        center.add(column);
+        center.add(titled);
 
         add(header, BorderLayout.NORTH);
         add(center, BorderLayout.CENTER);
@@ -140,8 +141,7 @@ public class OptionsPanel extends ArcadeBackgroundPanel {
     private void applyScale(float scale) {
         title.setFontSize(TITLE_SIZE * scale);
         back.setFont(ArcadeFont.of(ArcadeButtonUI.FONT_SIZE * scale));
-        Dimension balance = new Dimension(back.getPreferredSize().width, 0);
-        backBalance.changeShape(balance, balance, balance);
+        titleLayout.setVgap(Math.round(TITLE_GAP * scale));
 
         fullScreen.setFont(ArcadeFont.of(ArcadeCheckBoxUI.FONT_SIZE * scale));
         mute.setFont(ArcadeFont.of(ArcadeCheckBoxUI.FONT_SIZE * scale));
