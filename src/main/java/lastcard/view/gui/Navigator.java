@@ -42,17 +42,30 @@ public class Navigator {
         container.add(panel, screen.name());
     }
 
-    /** Mostra una schermata e ricorda quella di partenza, per poterci tornare con back(). */
+    /**
+     * Mostra una schermata e ricorda quella di partenza, per poterci tornare con back().
+     * Se la schermata è già nel percorso fatto, si torna indietro fino a lei: le schermate lasciate in mezzo
+     * escono dalla cronologia. Così dal tavolo a fine partita "Nuova partita" riporta a Nuova partita come se
+     * si fosse tornati indietro, e da lì Indietro va a Gioca, non al tavolo della partita finita.
+     */
     public void show(Screen screen) {
         Objects.requireNonNull(screen, "screen");
         if (!registered.contains(screen)) {
             throw new IllegalArgumentException("Screen not registered: " + screen);
         }
-        if (current != null && current != screen) {
+        int earlier = history.indexOf(screen);
+        if (earlier >= 0) {
+            history.subList(earlier, history.size()).clear();
+        } else if (current != null && current != screen) {
             history.add(current);
         }
         current = screen;
         layout.show(container, screen.name());
+    }
+
+    /** La schermata mostrata ora, oppure null prima della prima show(). */
+    Screen current() {
+        return current;
     }
 
     /** Torna alla schermata precedente. Se non ce n'è una, non fa niente. */
