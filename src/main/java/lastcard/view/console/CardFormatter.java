@@ -39,7 +39,8 @@ public final class CardFormatter {
             Map.entry("WILD_REVERSE_DRAW_FOUR", "Jolly Giro +4"),
             Map.entry("SKIP_EVERYONE", "Salta tutti"),
             Map.entry("DISCARD_ALL", "Scarta tutto"),
-            Map.entry("WILD_COLOR_ROULETTE", "Jolly Roulette"));
+            Map.entry("WILD_COLOR_ROULETTE", "Jolly Roulette"),
+            Map.entry("WILD_SHUFFLE_HANDS", "Jolly Rimescola Mani"));
 
     public CardFormatter() {
     }

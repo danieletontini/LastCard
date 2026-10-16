@@ -38,6 +38,7 @@ final class TableTexts {
         SYMBOLS.put(FaceSymbol.SKIP_EVERYONE, "Salta tutti");
         SYMBOLS.put(FaceSymbol.DISCARD_ALL, "Scarta tutto");
         SYMBOLS.put(FaceSymbol.WILD_COLOR_ROULETTE, "Jolly Roulette");
+        SYMBOLS.put(FaceSymbol.WILD_SHUFFLE_HANDS, "Jolly Rimescola Mani");
     }
 
     private TableTexts() {

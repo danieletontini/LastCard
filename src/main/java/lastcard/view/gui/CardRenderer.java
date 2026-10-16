@@ -103,6 +103,7 @@ public final class CardRenderer {
         glyphs.put(FaceSymbol.WILD_DRAW_TEN, this::wildDrawTen);
         glyphs.put(FaceSymbol.WILD_REVERSE_DRAW_FOUR, this::wildReverseDrawFour);
         glyphs.put(FaceSymbol.WILD_COLOR_ROULETTE, this::colorRoulette);
+        glyphs.put(FaceSymbol.WILD_SHUFFLE_HANDS, this::shuffleHands);
 
         cornerGlyphs.put(FaceSymbol.REVERSE, this::reverseCorners);
         cornerGlyphs.put(FaceSymbol.SKIP, this::skipCorners);
@@ -110,6 +111,7 @@ public final class CardRenderer {
         cornerGlyphs.put(FaceSymbol.SKIP_EVERYONE, this::skipEveryoneCorners);
         cornerGlyphs.put(FaceSymbol.DISCARD_ALL, this::discardAllCorners);
         cornerGlyphs.put(FaceSymbol.WILD_COLOR_ROULETTE, this::colorRouletteCorners);
+        cornerGlyphs.put(FaceSymbol.WILD_SHUFFLE_HANDS, this::wildCorners);
     }
 
     /** Altezza corrispondente a una larghezza. */
@@ -552,6 +554,30 @@ public final class CardRenderer {
     private void colorRoulette(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
         double u = w / 130;
         rouletteWheel(g, screen.getCenterX(), screen.getCenterY() + 7 * u, 80 * u, u, true);
+    }
+
+    /**
+     * Rimescola Mani: le quattro mini carte del Jolly +4, ma sparse e storte come un mazzo appena mescolato,
+     * invece che allineate in griglia. Negli angoli la ruota dei colori, come il jolly semplice.
+     */
+    private void shuffleHands(Graphics2D g, Rectangle2D.Double screen, CardFace face, double w) {
+        double u = w / 130;
+        double cx = screen.getCenterX();
+        double cy = screen.getCenterY();
+        double cw = 34 * u;
+        double ch = 48 * u;
+        double[] offsetsX = { -20, 18, -16, 20 };
+        double[] offsetsY = { -22, -18, 20, 16 };
+        double[] angles = { -28, 16, 22, -14 };
+        CardColor[] colors = ArcadePalette.playableColors();
+        AffineTransform previous = g.getTransform();
+        for (int i = 0; i < colors.length; i++) {
+            double x = cx + offsetsX[i] * u;
+            double y = cy + offsetsY[i] * u;
+            g.rotate(Math.toRadians(angles[i]), x, y);
+            miniCard(g, x - cw / 2, y - ch / 2, cw, ch, ArcadePalette.field(colors[i]), ArcadePalette.INK, w);
+            g.setTransform(previous);
+        }
     }
 
     /** Negli angoli la ruota in piccolo, senza perni; quella in alto scende un po' per far posto alla lancetta. */

@@ -34,7 +34,8 @@ public final class DeckFactory {
     private static final int NO_MERCY_WILD_REVERSE_DRAW_FOUR = 8;
     private static final int NO_MERCY_WILD_DRAW_SIX = 4;
     private static final int NO_MERCY_WILD_DRAW_TEN = 4;
-    private static final int NO_MERCY_WILD_COLOR_ROULETTE = 8;
+    private static final int NO_MERCY_WILD_COLOR_ROULETTE = 7;
+    private static final int NO_MERCY_WILD_SHUFFLE_HANDS = 1;   // carta nostra: prende il posto di una Roulette
 
     public static Deck createNoMercy() {
         return createNoMercy(new Random());
@@ -81,9 +82,12 @@ public final class DeckFactory {
         for (int i = 0; i < NO_MERCY_WILD_DRAW_TEN; i++) {
             cards.add(new WildDrawTen());
         }
-        // Quando ci sarà il Jolly Rimescola Mani (una copia) prenderà il posto di una Roulette, per restare a 168.
         for (int i = 0; i < NO_MERCY_WILD_COLOR_ROULETTE; i++) {
             cards.add(new WildColorRoulette());
+        }
+        // Il Jolly Rimescola Mani prende il posto di una Roulette, così il mazzo resta a 168 carte.
+        for (int i = 0; i < NO_MERCY_WILD_SHUFFLE_HANDS; i++) {
+            cards.add(new WildShuffleHands());
         }
 
         return new Deck(cards, random);

@@ -2,8 +2,6 @@ package lastcard.controller;
 
 /**
  * Esegue un compito dopo un'attesa: il controller del tavolo lo usa per distanziare le mosse delle CPU.
- * È un'interfaccia perché il controller non dipenda da Swing: nella GUI la implementa un timer di Swing,
- * nei test una versione che esegue i compiti a comando, senza aspettare davvero.
  */
 public interface TurnScheduler {
 
