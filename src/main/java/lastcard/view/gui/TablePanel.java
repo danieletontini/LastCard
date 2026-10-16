@@ -67,6 +67,13 @@ public class TablePanel extends JPanel implements TableView {
     private static final float SMALL_BUTTON_SIZE = 11f;
     private static final float LAST_CARD_SIZE = 17f;
     private static final int ERROR_MILLIS = 2500;
+    // Il popup degli effetti: un secondo in tutto, con una breve comparsa e una dissolvenza alla fine.
+    private static final int POPUP_MILLIS = 1000;
+    private static final int POPUP_FADE_IN_MILLIS = 120;
+    private static final int POPUP_FADE_OUT_MILLIS = 250;
+    private static final int POPUP_FRAME_MILLIS = 16;
+    private static final float POPUP_TITLE_SIZE = 26f;
+    private static final float POPUP_LINE_SIZE = 11f;
 
     private static final Color FELT = ArcadePalette.TABLE;
     private static final Color BOX_FILL = new Color(0x0D1411);
@@ -86,6 +93,11 @@ public class TablePanel extends JPanel implements TableView {
     private final ChoiceOverlay optionsOverlay;
     private final OptionsControls optionsControls;
     private final Timer errorTimer;
+    private final Timer popupTimer;
+    // Gli eventi della mossa in corso: quando arriva il nuovo stato diventano, se serve, un popup.
+    private final List<GameEvent> moveEvents;
+    private EffectPopup popup;
+    private long popupStart;
 
     private String viewer;
     private TableActions actions;
@@ -157,6 +169,15 @@ public class TablePanel extends JPanel implements TableView {
         });
         errorTimer.setRepeats(false);
 
+        this.moveEvents = new ArrayList<>();
+        // Ridisegna il popup a ogni fotogramma finché dura, poi lo toglie.
+        this.popupTimer = new Timer(POPUP_FRAME_MILLIS, e -> {
+            if (popupElapsed() >= POPUP_MILLIS) {
+                hidePopup();
+            }
+            repaint();
+        });
+
         MouseAdapter mouse = new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -190,6 +211,8 @@ public class TablePanel extends JPanel implements TableView {
         this.eventText = null;
         this.errorText = null;
         this.hoverCard = -1;
+        moveEvents.clear();
+        hidePopup();
         overlay.close();
         optionsOverlay.close();
         repaint();
@@ -198,6 +221,9 @@ public class TablePanel extends JPanel implements TableView {
     @Override
     public void showState(VisibleState newState) {
         this.state = newState;
+        // Il controller manda lo stato dopo ogni mossa: gli eventi arrivati fin qui sono quelli della mossa.
+        EffectPopup.of(moveEvents, viewer).ifPresent(this::showPopup);
+        moveEvents.clear();
         // Le scelte si riaprono subito dopo, se il controller le chiede: con il nuovo stato il form vecchio non vale più.
         overlay.close();
         boolean myTurn = isMyTurn();
@@ -275,7 +301,24 @@ public class TablePanel extends JPanel implements TableView {
         if (text != null) {
             eventText = text;
         }
+        moveEvents.add(event);
         repaint();
+    }
+
+    // Un popup nuovo prende il posto di quello che stava ancora finendo.
+    private void showPopup(EffectPopup newPopup) {
+        popup = newPopup;
+        popupStart = System.nanoTime();
+        popupTimer.restart();
+    }
+
+    private void hidePopup() {
+        popup = null;
+        popupTimer.stop();
+    }
+
+    private long popupElapsed() {
+        return (System.nanoTime() - popupStart) / 1_000_000;
     }
 
     // ------------------------------------------------------------------
@@ -345,6 +388,7 @@ public class TablePanel extends JPanel implements TableView {
             paintCenter(g, s);
             paintHand(g, s);
             paintViewerBadge(g, s);
+            paintPopup(g, s);
         } finally {
             g.dispose();
         }
@@ -516,6 +560,81 @@ public class TablePanel extends JPanel implements TableView {
             String text = TableTexts.upper(eventText);
             g.setColor(ArcadeButtonUI.CREAM);
             g.drawString(text, (float) (cx - fm.stringWidth(text) / 2.0), (float) (tagY + 34 * s));
+        }
+    }
+
+    // Il popup dell'effetto, sopra mazzo e scarti: un riquadro scuro con il titolo grande e gli altri effetti
+    // sotto. Compare ingrandendosi un poco e alla fine sfuma; non è un componente, quindi i clic passano.
+    private void paintPopup(Graphics2D g, float s) {
+        if (popup == null) {
+            return;
+        }
+        long elapsed = popupElapsed();
+        float alpha;
+        double grow;
+        if (elapsed < POPUP_FADE_IN_MILLIS) {
+            float t = elapsed / (float) POPUP_FADE_IN_MILLIS;
+            alpha = t;
+            grow = 0.85 + 0.15 * t;
+        } else if (elapsed > POPUP_MILLIS - POPUP_FADE_OUT_MILLIS) {
+            alpha = Math.max(0f, (POPUP_MILLIS - elapsed) / (float) POPUP_FADE_OUT_MILLIS);
+            grow = 1;
+        } else {
+            alpha = 1f;
+            grow = 1;
+        }
+        if (alpha <= 0f) {
+            return;
+        }
+
+        Graphics2D gp = (Graphics2D) g.create();
+        try {
+            double cx = getWidth() / 2.0;
+            double cy = getHeight() * 0.40;
+            gp.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, alpha));
+            gp.translate(cx, cy);
+            gp.scale(grow, grow);
+
+            java.awt.Font titleFont = ArcadeFont.of(POPUP_TITLE_SIZE * s);
+            java.awt.Font lineFont = ArcadeFont.of(POPUP_LINE_SIZE * s);
+            FontMetrics tm = gp.getFontMetrics(titleFont);
+            FontMetrics lm = gp.getFontMetrics(lineFont);
+            double lineGap = 10 * s;
+            double width = tm.stringWidth(popup.title());
+            double height = tm.getAscent();
+            for (String line : popup.lines()) {
+                width = Math.max(width, lm.stringWidth(line));
+                height += lineGap + lm.getAscent();
+            }
+            double padX = 30 * s;
+            double padY = 22 * s;
+            double boxW = width + 2 * padX;
+            double boxH = height + 2 * padY;
+            Shape box = new RoundRectangle2D.Double(-boxW / 2, -boxH / 2, boxW, boxH, 10 * s, 10 * s);
+            gp.setColor(BOX_FILL);
+            gp.fill(box);
+            gp.setStroke(new BasicStroke(2.5f * s));
+            gp.setColor(ArcadeButtonUI.CREAM);
+            gp.draw(box);
+
+            // il titolo con l'ombra rossa, come i titoli delle schermate
+            double y = -boxH / 2 + padY + tm.getAscent();
+            float titleX = (float) (-tm.stringWidth(popup.title()) / 2.0);
+            float shadow = Math.max(1f, 2.5f * s);
+            gp.setFont(titleFont);
+            gp.setColor(ArcadeButtonUI.SHADOW);
+            gp.drawString(popup.title(), titleX + shadow, (float) y + shadow);
+            gp.setColor(ArcadeButtonUI.CREAM);
+            gp.drawString(popup.title(), titleX, (float) y);
+
+            gp.setFont(lineFont);
+            gp.setColor(ArcadeButtonUI.ALERT_HOVER);
+            for (String line : popup.lines()) {
+                y += lineGap + lm.getAscent();
+                gp.drawString(line, (float) (-lm.stringWidth(line) / 2.0), (float) y);
+            }
+        } finally {
+            gp.dispose();
         }
     }
 
@@ -786,6 +905,7 @@ public class TablePanel extends JPanel implements TableView {
         optionsOverlay.close();
         overlay.close();
         errorTimer.stop();
+        hidePopup();
         navigator.show(screen);
     }
 }
