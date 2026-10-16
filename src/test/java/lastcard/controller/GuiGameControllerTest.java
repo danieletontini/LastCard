@@ -248,6 +248,74 @@ class GuiGameControllerTest {
     }
 
     @Test
+    void withTheOptionsOpenTheCpusWaitAndResumeAfterwards() {
+        Setup s = start(3, GameRules.classic(), 6);
+        runCpusUntilHuman(s);
+        playHuman(s, new CpuPlayer(HUMAN, new BasicCpuStrategy()));
+        if (s.scheduler().task == null) {
+            return; // tocca ancora all'umano o la partita è finita: nessuna CPU da fermare
+        }
+        VisibleState before = s.table().state;
+
+        s.controller().onPause();
+
+        assertNull(s.scheduler().task, "in pausa la mossa della CPU è annullata");
+        assertEquals(before, s.table().state);
+
+        s.controller().onResume();
+
+        assertNotNull(s.scheduler().task, "alla ripresa la CPU di turno riparte");
+        assertEquals(GuiGameController.CPU_MOVE_DELAY_MILLIS, s.scheduler().delay, "con un'attesa intera");
+        assertEquals(before, s.table().state, "la pausa non ha cambiato la partita");
+    }
+
+    @Test
+    void duringThePauseTheHumanCannotMove() {
+        Setup s = start(2, GameRules.classic(), 7);
+        runCpusUntilHuman(s);
+        VisibleState before = s.table().state;
+
+        s.controller().onPause();
+        s.controller().onDraw();
+
+        assertEquals(before, s.table().state, "in pausa la pescata non arriva alla partita");
+        assertTrue(s.table().errors.isEmpty());
+
+        s.controller().onResume();
+        s.controller().onDraw();
+
+        assertEquals(before.currentHand().size() + 1, s.table().state.currentHand().size(),
+                "dopo la ripresa si gioca di nuovo");
+    }
+
+    @Test
+    void resumingAChoiceAsksItAgain() {
+        // Si gioca finché all'umano viene chiesto un colore, poi si apre e si chiude il form Opzioni.
+        for (long seed = 0; seed < 40; seed++) {
+            Setup s = start(1, GameRules.classic(), seed);
+            CpuPlayer brain = new CpuPlayer(HUMAN, new BasicCpuStrategy());
+            for (int step = 0; step < 2000 && s.table().winner == null && !s.table().colorAsked; step++) {
+                if (s.scheduler().task != null) {
+                    s.scheduler().runPending();
+                } else {
+                    playHuman(s, brain);
+                }
+            }
+            if (!s.table().colorAsked) {
+                continue;
+            }
+            s.table().colorAsked = false;
+
+            s.controller().onPause();
+            s.controller().onResume();
+
+            assertTrue(s.table().colorAsked, "dopo la pausa il form del colore si riapre");
+            return;
+        }
+        throw new AssertionError("in 40 partite l'umano non ha mai dovuto scegliere un colore");
+    }
+
+    @Test
     void wholeGamesPlayedFromTheTableEndWithoutErrors() {
         int colorChoices = 0;
         for (long seed = 0; seed < 60; seed++) {

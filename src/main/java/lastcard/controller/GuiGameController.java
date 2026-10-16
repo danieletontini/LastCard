@@ -41,6 +41,8 @@ public class GuiGameController implements TableActions {
     private final String humanName;
     private final TurnScheduler scheduler;
     private boolean stopped;
+    // Il form Opzioni è aperto: nessuno muove finché non si chiude.
+    private boolean paused;
 
     public GuiGameController(Game game, TableView view, List<CpuPlayer> cpus, String humanName,
             TurnScheduler scheduler) {
@@ -53,6 +55,7 @@ public class GuiGameController implements TableActions {
             this.cpus.put(cpu.getName(), cpu);
         }
         this.stopped = false;
+        this.paused = false;
     }
 
     /** Prepara il tavolo e avvia la partita. */
@@ -121,10 +124,30 @@ public class GuiGameController implements TableActions {
 
     @Override
     public void onNextHand() {
-        if (stopped || game.getState() != GameState.HAND_OVER) {
+        if (stopped || paused || game.getState() != GameState.HAND_OVER) {
             return;
         }
         game.startNextHand();
+        afterMove();
+    }
+
+    @Override
+    public void onPause() {
+        if (stopped || paused) {
+            return;
+        }
+        paused = true;
+        // La mossa della CPU in attesa si annulla: alla ripresa riparte con un'attesa intera.
+        scheduler.cancel();
+    }
+
+    @Override
+    public void onResume() {
+        if (stopped || !paused) {
+            return;
+        }
+        paused = false;
+        // Si riparte dallo stato attuale: si riprogramma la CPU di turno o si richiede la scelta all'umano.
         afterMove();
     }
 
@@ -137,7 +160,7 @@ public class GuiGameController implements TableActions {
 
     // Una mossa del giocatore umano: solo quando tocca a lui. Se il modello la rifiuta, il motivo va al tavolo.
     private void perform(Move move, String errorMessage) {
-        if (stopped || isHandClosed()) {
+        if (stopped || paused || isHandClosed()) {
             return;
         }
         if (!game.getVisibleState().currentPlayerName().equals(humanName)) {
@@ -188,7 +211,7 @@ public class GuiGameController implements TableActions {
     // Una mossa della CPU: di solito una sola mossa, oppure Ultima! seguita dalla carta.
     // Dopo una pescata o un jolly la stessa CPU resta di turno: la sua mossa seguente arriva dopo un'altra attesa.
     private void playCpuMove(CpuPlayer cpu) {
-        if (stopped || isHandClosed()) {
+        if (stopped || paused || isHandClosed()) {
             return;
         }
         for (Move move : cpu.decide(game.getVisibleState())) {

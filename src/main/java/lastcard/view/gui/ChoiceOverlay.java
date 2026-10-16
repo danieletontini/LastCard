@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -26,7 +27,7 @@ import lastcard.model.PlayerSummary;
 
 /**
  * Il form che si apre sopra il tavolo quando serve una scelta: il colore dopo un jolly (o per la Roulette),
- * l'avversario con cui scambiare la mano dopo un 7, cosa fare a fine partita.
+ * l'avversario con cui scambiare la mano dopo un 7, cosa fare a fine partita, le opzioni durante la partita.
  *
  * Copre tutto il tavolo con un velo scuro, che intercetta i clic: finché il form è aperto non si gioca.
  * Al centro c'è un riquadro con la domanda e i pulsanti; premuto un pulsante il form si chiude da solo.
@@ -114,6 +115,16 @@ final class ChoiceOverlay extends JPanel {
 
     /** Un messaggio con le sue azioni, come la fine della partita. Il primo pulsante è quello principale. */
     void showMessage(String title, String subtitle, List<String> labels, List<Runnable> actions, float scale) {
+        open(title, subtitle, null, actionButtons(labels, actions), labels.size(), scale);
+    }
+
+    /** Un contenuto qualsiasi sotto il titolo, come le opzioni, con le sue azioni in riga sotto. */
+    void showContent(String title, JComponent content, List<String> labels, List<Runnable> actions, float scale) {
+        open(title, null, content, actionButtons(labels, actions), labels.size(), scale);
+    }
+
+    // Un pulsante per azione: il primo è quello principale, e ognuno chiude il form prima di agire.
+    private List<JButton> actionButtons(List<String> labels, List<Runnable> actions) {
         List<JButton> buttons = new ArrayList<>();
         for (int i = 0; i < labels.size(); i++) {
             Runnable action = actions.get(i);
@@ -125,7 +136,7 @@ final class ChoiceOverlay extends JPanel {
             });
             buttons.add(button);
         }
-        open(title, subtitle, buttons, buttons.size(), scale);
+        return buttons;
     }
 
     void close() {
@@ -138,6 +149,11 @@ final class ChoiceOverlay extends JPanel {
     }
 
     private void open(String title, String subtitle, List<JButton> buttons, int columns, float scale) {
+        open(title, subtitle, null, buttons, columns, scale);
+    }
+
+    private void open(String title, String subtitle, JComponent content, List<JButton> buttons, int columns,
+            float scale) {
         box.removeAll();
         int padding = Math.round(PADDING * scale);
         int gap = Math.round(GAP * scale);
@@ -156,6 +172,12 @@ final class ChoiceOverlay extends JPanel {
             c.gridy++;
             c.insets = new Insets(0, 0, gap * 2, 0);
             box.add(label, c);
+        }
+
+        if (content != null) {
+            c.gridy++;
+            c.insets = new Insets(gap, 0, gap * 3, 0);
+            box.add(content, c);
         }
 
         JPanel grid = new JPanel(new GridLayout(0, columns, gap, gap));

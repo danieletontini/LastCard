@@ -29,6 +29,12 @@ public interface TableActions {
     /** Partita a punti: dopo i punteggi di fine mano, si distribuisce la mano successiva. */
     void onNextHand();
 
+    /** Si apre il form Opzioni: la partita si mette in pausa e le CPU aspettano. */
+    void onPause();
+
+    /** Si chiude il form Opzioni: la partita riprende da dove era rimasta. */
+    void onResume();
+
     /** Si lascia il tavolo: la partita si ferma e le CPU smettono di giocare. */
     void onLeaveTable();
 }

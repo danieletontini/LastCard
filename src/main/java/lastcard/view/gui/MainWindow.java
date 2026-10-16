@@ -35,7 +35,8 @@ public class MainWindow extends JFrame implements MenuView {
 
         this.navigator = new Navigator();
         // Il tavolo passa gli eventi della partita anche ai suoni: la partita non sa che esiste l'audio.
-        this.table = new TablePanel(navigator, new GameSounds(audio::play));
+        // Il suo form Opzioni ha le stesse opzioni della schermata Opzioni, sulle stesse impostazioni.
+        this.table = new TablePanel(navigator, new GameSounds(audio::play), new OptionsControls(settings, this, audio));
         // Il controller del menu crea la partita, la affida al controller del tavolo e chiede di mostrare il tavolo.
         // Le mosse delle CPU sono distanziate da un timer di Swing.
         AppController controller = new AppController(this, new SwingTurnScheduler());

@@ -78,10 +78,13 @@ public class TablePanel extends JPanel implements TableView {
     private final Navigator navigator;
     private final GameObserver sounds;
     private final CardImageCache cards;
-    private final JButton menu;
+    private final JButton options;
     private final JButton pass;
     private final JButton lastCard;
     private final ChoiceOverlay overlay;
+    // Il form Opzioni sta sopra quello delle scelte: chiudendolo, la scelta in corso è ancora lì.
+    private final ChoiceOverlay optionsOverlay;
+    private final OptionsControls optionsControls;
     private final Timer errorTimer;
 
     private String viewer;
@@ -104,11 +107,15 @@ public class TablePanel extends JPanel implements TableView {
     /** Una carta della mano come è stata disegnata: dove, ruotata come, e se si può giocare. */
     private record HandCard(int index, AffineTransform transform, Rectangle2D bounds, boolean playable) { }
 
-    /** @param sounds riceve anche lui gli eventi della partita, per i suoni; può essere null */
-    public TablePanel(Navigator navigator, GameObserver sounds) {
+    /**
+     * @param sounds riceve anche lui gli eventi della partita, per i suoni; può essere null
+     * @param optionsControls le opzioni da mostrare nel form Opzioni, le stesse della schermata Opzioni
+     */
+    public TablePanel(Navigator navigator, GameObserver sounds, OptionsControls optionsControls) {
         super(null);
         this.navigator = navigator;
         this.sounds = sounds;
+        this.optionsControls = optionsControls;
         this.cards = new CardImageCache();
         this.handCards = new ArrayList<>();
         this.hoverCard = -1;
@@ -116,13 +123,15 @@ public class TablePanel extends JPanel implements TableView {
         this.lastScale = 0f;
         setOpaque(true);
 
-        // Il form va aggiunto per primo: nel layout libero il primo componente sta sopra gli altri.
+        // I form vanno aggiunti per primi: nel layout libero il primo componente sta sopra gli altri.
+        this.optionsOverlay = new ChoiceOverlay();
+        add(optionsOverlay);
         this.overlay = new ChoiceOverlay();
         add(overlay);
 
-        this.menu = ButtonFactory.createButton("Menu", ArcadeButtonUI.Variant.SECONDARY);
-        menu.addActionListener(e -> leaveTo(Screen.MAIN_MENU));
-        add(menu);
+        this.options = ButtonFactory.createButton("Opzioni", ArcadeButtonUI.Variant.SECONDARY);
+        options.addActionListener(e -> openOptions());
+        add(options);
 
         this.pass = ButtonFactory.createButton("Passa", ArcadeButtonUI.Variant.SECONDARY);
         pass.addActionListener(e -> {
@@ -182,6 +191,7 @@ public class TablePanel extends JPanel implements TableView {
         this.errorText = null;
         this.hoverCard = -1;
         overlay.close();
+        optionsOverlay.close();
         repaint();
     }
 
@@ -277,17 +287,23 @@ public class TablePanel extends JPanel implements TableView {
         float s = scale();
         if (s != lastScale) {
             lastScale = s;
-            menu.setFont(ArcadeFont.of(SMALL_BUTTON_SIZE * s));
+            options.setFont(ArcadeFont.of(SMALL_BUTTON_SIZE * s));
             pass.setFont(ArcadeFont.of(ArcadeButtonUI.FONT_SIZE * s));
             lastCard.setFont(ArcadeFont.of(LAST_CARD_SIZE * s));
+            optionsControls.applyScale(s);
+            // Il form Opzioni resta aperto anche quando si passa a schermo intero: lo si ricostruisce alla nuova scala.
+            if (optionsOverlay.isOpen()) {
+                showOptionsForm(s);
+            }
         }
         int w = getWidth();
         int h = getHeight();
         int m = Math.round(MARGIN * s);
+        optionsOverlay.setBounds(0, 0, w, h);
         overlay.setBounds(0, 0, w, h);
 
-        Dimension menuSize = menu.getPreferredSize();
-        menu.setBounds(m, m, menuSize.width, menuSize.height);
+        Dimension optionsSize = options.getPreferredSize();
+        options.setBounds(m, m, optionsSize.width, optionsSize.height);
 
         Dimension lastSize = lastCard.getPreferredSize();
         lastCard.setBounds(w - m - lastSize.width, h - m - lastSize.height, lastSize.width, lastSize.height);
@@ -737,11 +753,37 @@ public class TablePanel extends JPanel implements TableView {
         return opponents;
     }
 
+    // Il form Opzioni: la partita va in pausa finché resta aperto.
+    private void openOptions() {
+        if (actions != null) {
+            actions.onPause();
+        }
+        showOptionsForm(scale());
+    }
+
+    // Le opzioni del menu principale, poi Riprendi (chiude il form e la partita riparte) e Abbandona partita.
+    private void showOptionsForm(float s) {
+        optionsControls.refresh();
+        optionsOverlay.showContent("OPZIONI", optionsControls,
+                List.of("Riprendi", "Abbandona partita"),
+                List.of(this::resume, () -> leaveTo(Screen.MAIN_MENU)),
+                s);
+        repaint();
+    }
+
+    private void resume() {
+        if (actions != null) {
+            actions.onResume();
+        }
+        repaint();
+    }
+
     // Si lascia il tavolo: la partita si ferma, poi si va alla schermata chiesta.
     private void leaveTo(Screen screen) {
         if (actions != null) {
             actions.onLeaveTable();
         }
+        optionsOverlay.close();
         overlay.close();
         errorTimer.stop();
         navigator.show(screen);
