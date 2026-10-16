@@ -1,61 +1,72 @@
 package lastcard;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import javax.swing.SwingUtilities;
 
+import lastcard.controller.AppController;
 import lastcard.controller.GameController;
+import lastcard.controller.GameSettings;
 import lastcard.model.BasicCpuStrategy;
 import lastcard.model.CpuPlayer;
 import lastcard.model.Game;
-import lastcard.model.GameRules;
 import lastcard.view.audio.AudioPlayer;
 import lastcard.view.audio.GameSounds;
 import lastcard.view.console.CardFormatter;
+import lastcard.view.console.ConsoleMenu;
 import lastcard.view.console.ConsoleView;
 import lastcard.view.gui.MainWindow;
 import lastcard.view.gui.Settings;
 
 public class Main {
 
+    private static final String HUMAN_NAME = "Tu";
+
     private Main() {
     }
 
     /**
      * Sceglie la vista: --console per il terminale, --gui (o nessun argomento) per la finestra.
-     * Nel terminale, --nomercy dopo --console avvia la modalità No Mercy invece di quella classica.
+     * Nel terminale modalità, numero di CPU e obiettivo si scelgono dal menu iniziale.
      */
     public static void main(String[] args) {
         String mode = "--gui";
         if (args.length > 0) {
             mode = args[0];
         }
-        String variant = "";
-        if (args.length > 1) {
-            variant = args[1];
-        }
 
-        if (mode.equals("--console") && variant.isEmpty()) {
-            runConsole(GameRules.classic());
-        } else if (mode.equals("--console") && variant.equals("--nomercy")) {
-            runConsole(GameRules.noMercy());
-        } else if (mode.equals("--gui") && variant.isEmpty()) {
+        if (args.length > 1) {
+            printUsage();
+        } else if (mode.equals("--console")) {
+            runConsole();
+        } else if (mode.equals("--gui")) {
             runGui();
         } else {
-            System.out.println("Argomenti non riconosciuti.");
-            System.out.println("Uso: --gui (predefinito), --console, oppure --console --nomercy");
+            printUsage();
         }
     }
 
-    private static void runConsole(GameRules rules) {
+    private static void printUsage() {
+        System.out.println("Argomenti non riconosciuti.");
+        System.out.println("Uso: --gui (predefinito) oppure --console");
+    }
+
+    private static void runConsole() {
         Scanner in = new Scanner(System.in);
         ConsoleView view = new ConsoleView(new CardFormatter(), in);
 
-        Game game = new Game(List.of("Tu", "CPU 1", "CPU 2"), rules);
-        List<CpuPlayer> cpus = List.of(
-                new CpuPlayer("CPU 1", new BasicCpuStrategy()),
-                new CpuPlayer("CPU 2", new BasicCpuStrategy()));
+        GameSettings settings = new ConsoleMenu(in).askSettings();
+        List<String> names = new ArrayList<>();
+        List<CpuPlayer> cpus = new ArrayList<>();
+        names.add(HUMAN_NAME);
+        for (int i = 1; i <= settings.opponents(); i++) {
+            String name = "CPU " + i;
+            names.add(name);
+            cpus.add(new CpuPlayer(name, new BasicCpuStrategy()));
+        }
+        Game game = new Game(names, AppController.toRules(settings));
 
         // La vista va registrata prima di avviare la partita, per ricevere anche la prima carta scoperta.
         game.addObserver(view);
