@@ -17,14 +17,14 @@ import javax.sound.sampled.FloatControl;
  * Riproduce effetti e musica dai file WAV delle risorse, con il volume scelto nelle Opzioni.
  * Se un file manca o il computer non ha l'audio, resta in silenzio: lo segnala una volta sullo
  * standard error e il gioco va avanti. Java riproduce WAV, non MP3 né OGG.
- * Le musiche si ripetono con una dissolvenza incrociata fra la fine e l'inizio, così il giro non si sente.
+ * Le musiche si ripetono con un fade in all'inizio e un fade out alla fine, così il giro non si sente.
  */
 public class AudioPlayer {
 
     public static final int MIN_VOLUME = 0;
     public static final int MAX_VOLUME = 100;
-    /** Quanto dura la dissolvenza incrociata fra la fine e l'inizio di una musica in loop. */
-    static final double CROSSFADE_SECONDS = 5.0;
+    /** Quanto durano il fade in all'inizio e il fade out alla fine di una musica in loop, ciascuno. */
+    static final double FADE_SECONDS = 1.0;
 
     private final Map<SoundEffect, Clip> effects = new EnumMap<>(SoundEffect.class);
     private final Map<Music, Clip> tracks = new EnumMap<>(Music.class);
@@ -105,7 +105,7 @@ public class AudioPlayer {
         currentMusic = null;
     }
 
-    // Con loop vero è una musica: la fine e l'inizio si sovrappongono, così al giro non si sente lo stacco.
+    // Con loop vero è una musica: inizio e fine sfumano, così al giro non si sente lo stacco.
     private Clip open(String resourcePath, boolean loop) {
         if (unavailable.contains(resourcePath)) {
             return null;
@@ -118,8 +118,8 @@ public class AudioPlayer {
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(new BufferedInputStream(resource))) {
             AudioFormat format = stream.getFormat();
             byte[] sound = stream.readAllBytes();
-            if (loop && canCrossfade(format)) {
-                sound = crossfadeLoop(sound, format, (int) Math.round(CROSSFADE_SECONDS * format.getFrameRate()));
+            if (loop && canFade(format)) {
+                sound = fadeInAndOut(sound, format, (int) Math.round(FADE_SECONDS * format.getFrameRate()));
             }
             Clip clip = AudioSystem.getClip();
             clip.open(format, sound, 0, sound.length);
@@ -130,18 +130,17 @@ public class AudioPlayer {
     }
 
     // La dissolvenza lavora sui campioni: serve PCM con segno a 16 bit, il formato dei WAV del gioco.
-    static boolean canCrossfade(AudioFormat format) {
+    static boolean canFade(AudioFormat format) {
         return format.getEncoding() == AudioFormat.Encoding.PCM_SIGNED && format.getSampleSizeInBits() == 16;
     }
 
     /**
-     * Prepara una musica per il loop senza stacco: gli ultimi fadeFrames vengono sovrapposti ai primi, con la
-     * fine che sfuma mentre l'inizio cresce. Il risultato è più corto di fadeFrames: quando ricomincia, la
-     * traccia riparte proprio dal punto in cui la fine stava continuando, quindi il giro è continuo.
-     * Le curve sono a potenza costante (seno e coseno), così a metà dissolvenza il volume non cala.
-     * Se la traccia è troppo corta per la dissolvenza, resta com'è.
+     * Prepara una musica per il loop: i primi fadeFrames crescono dal silenzio (fade in) e gli ultimi fadeFrames
+     * sfumano fino al silenzio (fade out), così al giro la traccia non salta da piena a piena. La lunghezza
+     * resta la stessa. Le curve sono un quarto di seno: salgono in fretta all'inizio e si posano piano.
+     * Se la traccia è troppo corta per le due dissolvenze, resta com'è.
      */
-    static byte[] crossfadeLoop(byte[] sound, AudioFormat format, int fadeFrames) {
+    static byte[] fadeInAndOut(byte[] sound, AudioFormat format, int fadeFrames) {
         int frameSize = format.getFrameSize();
         int channels = format.getChannels();
         int frames = sound.length / frameSize;
@@ -149,20 +148,14 @@ public class AudioPlayer {
             return sound;
         }
         boolean bigEndian = format.isBigEndian();
-        int outFrames = frames - fadeFrames;
-        byte[] out = new byte[outFrames * frameSize];
-        System.arraycopy(sound, 0, out, 0, out.length);
-
+        byte[] out = sound.clone();
         for (int i = 0; i < fadeFrames; i++) {
-            double t = (i + 0.5) / fadeFrames;
-            double fadeIn = Math.sin(t * Math.PI / 2);
-            double fadeOut = Math.cos(t * Math.PI / 2);
+            double gain = Math.sin((i + 0.5) / fadeFrames * Math.PI / 2);
             for (int c = 0; c < channels; c++) {
                 int head = i * frameSize + c * 2;
-                int tail = (outFrames + i) * frameSize + c * 2;
-                double mixed = sample(sound, head, bigEndian) * fadeIn + sample(sound, tail, bigEndian) * fadeOut;
-                int value = (int) Math.round(Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, mixed)));
-                writeSample(out, head, value, bigEndian);
+                int tail = (frames - 1 - i) * frameSize + c * 2;
+                writeSample(out, head, (int) Math.round(sample(sound, head, bigEndian) * gain), bigEndian);
+                writeSample(out, tail, (int) Math.round(sample(sound, tail, bigEndian) * gain), bigEndian);
             }
         }
         return out;
