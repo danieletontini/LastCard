@@ -40,6 +40,8 @@ public record GameEvent(Type type, String playerName, Card card, CardColor color
         HANDS_SWAPPED,
         /** No Mercy: tutti hanno passato la mano al successivo nel senso di gioco (rotazione 0). */
         HANDS_ROTATED,
+        /** No Mercy: playerName ha giocato il Jolly Rimescola Mani, le mani si sono scambiate a caso. */
+        HANDS_SHUFFLED,
         /** No Mercy: playerName ha raggiunto la soglia di carte ed è eliminato. */
         PLAYER_ELIMINATED,
         /** Partita a punti: playerName ha chiuso la mano e preso count punti. */
@@ -111,6 +113,10 @@ public record GameEvent(Type type, String playerName, Card card, CardColor color
 
     static GameEvent handsRotated() {
         return new GameEvent(Type.HANDS_ROTATED, null, null, null, 0, null);
+    }
+
+    static GameEvent handsShuffled(String playerName) {
+        return new GameEvent(Type.HANDS_SHUFFLED, playerName, null, null, 0, null);
     }
 
     static GameEvent playerEliminated(String playerName) {

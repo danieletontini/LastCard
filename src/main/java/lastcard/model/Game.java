@@ -1,6 +1,7 @@
 package lastcard.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +33,8 @@ public class Game {
     // Le loro carte tornano subito negli scarti, quindi vanno contati prima: li prende chi chiude la mano.
     private int eliminatedPoints;
     private final boolean shuffleOnStart;
+    // Le scelte a caso del motore, come il Jolly Rimescola Mani: con lo stesso seme la partita si ripete uguale.
+    private final Random random;
     private final List<GameObserver> observers;
 
     /** Partita con le regole classiche. */
@@ -47,7 +50,7 @@ public class Game {
     /** Con lo stesso Random (per esempio new Random(42)) la partita si ripete identica: serve a test e replay. */
     public Game(List<String> playerNames, GameRules rules, Random random) {
         this(playerNames, Objects.requireNonNull(rules, "rules"),
-                DeckFactory.create(rules, Objects.requireNonNull(random, "random")), true);
+                DeckFactory.create(rules, Objects.requireNonNull(random, "random")), true, random);
     }
 
     // Per i test: regole classiche, un mazzo preparato a mano e, se shuffleOnStart è falso, pescato nell'ordine dato.
@@ -57,6 +60,11 @@ public class Game {
 
     // Per i test: come sopra, con regole a scelta.
     Game(List<String> playerNames, GameRules rules, Deck deck, boolean shuffleOnStart) {
+        this(playerNames, rules, deck, shuffleOnStart, new Random());
+    }
+
+    // Per i test: come sopra, con anche il Random delle scelte a caso del motore.
+    Game(List<String> playerNames, GameRules rules, Deck deck, boolean shuffleOnStart, Random random) {
         Objects.requireNonNull(playerNames, "playerNames");
         if (playerNames.size() < 2 || playerNames.size() > 10) {
             throw new IllegalArgumentException("A game must have between 2 and 10 players.");
@@ -85,6 +93,7 @@ public class Game {
         this.winner = null;
         this.eliminatedPoints = 0;
         this.shuffleOnStart = shuffleOnStart;
+        this.random = Objects.requireNonNull(random, "random");
         this.observers = new ArrayList<>();
     }
 
@@ -573,6 +582,47 @@ public class Game {
             active.get((i + 1) % active.size()).addCards(hands.get(i));
         }
         notifyObservers(GameEvent.handsRotated());
+    }
+
+    // No Mercy, Jolly Rimescola Mani: le mani dei giocatori ancora in gioco si scambiano a caso e nessuno
+    // riceve la propria; con 2 giocatori è uno scambio. Ognuno tiene la mano che riceve, con quante carte ha.
+    // Le dichiarazioni di Ultima! valevano per le mani di prima, quindi si azzerano.
+    public void shuffleHands() {
+        ensureInProgress();
+        List<Player> active = new ArrayList<>();
+        List<List<Card>> hands = new ArrayList<>();
+        for (Player player : players) {
+            if (!player.isEliminated()) {
+                active.add(player);
+                hands.add(player.takeHand());
+            }
+        }
+        List<Integer> receivers = derangement(active.size());
+        for (int i = 0; i < active.size(); i++) {
+            active.get(receivers.get(i)).addCards(hands.get(i));
+        }
+        resetAllLastCardCalls();
+        notifyObservers(GameEvent.handsShuffled(lastPlayer.getName()));
+    }
+
+    // Una permutazione a caso di 0..size-1 in cui nessuno resta al suo posto: la mano i va al giocatore receivers[i].
+    // Si rimescola finché qualcuno riceverebbe la propria mano; servono in media meno di tre tentativi.
+    private List<Integer> derangement(int size) {
+        List<Integer> receivers = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            receivers.add(i);
+        }
+        boolean someoneKeepsOwn = size > 1;
+        while (someoneKeepsOwn) {
+            Collections.shuffle(receivers, random);
+            someoneKeepsOwn = false;
+            for (int i = 0; i < size; i++) {
+                if (receivers.get(i) == i) {
+                    someoneKeepsOwn = true;
+                }
+            }
+        }
+        return receivers;
     }
 
     private void executeColorChoice(ChooseColor move) {

@@ -205,6 +205,8 @@ public class ConsoleView implements GameView, GameObserver {
             printEvent(name + " scambia la mano con [" + event.targetName() + "]");
         } else if (type == GameEvent.Type.HANDS_ROTATED) {
             printEvent("Tutti passano la propria mano al giocatore successivo");
+        } else if (type == GameEvent.Type.HANDS_SHUFFLED) {
+            printEvent(name + " rimescola le mani: ognuno riceve quella di un altro");
         } else if (type == GameEvent.Type.PLAYER_ELIMINATED) {
             printEvent(name + " ha troppe carte ed è eliminato");
         } else if (type == GameEvent.Type.HAND_WON) {

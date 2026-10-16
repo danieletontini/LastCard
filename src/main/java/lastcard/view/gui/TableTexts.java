@@ -98,6 +98,7 @@ final class TableTexts {
                     + color(event.color());
             case HANDS_SWAPPED -> swapped(event, viewer);
             case HANDS_ROTATED -> "Tutte le mani passano al giocatore successivo";
+            case HANDS_SHUFFLED -> (me ? "Rimescoli" : name + " rimescola") + " le mani: ognuno riceve quella di un altro";
             case PLAYER_ELIMINATED -> me ? "Sei eliminato!" : name + " è eliminato";
             case HAND_WON -> (me ? "Chiudi la mano" : name + " chiude la mano") + ": " + event.count() + " punti";
         };
