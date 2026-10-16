@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -16,11 +17,14 @@ import javax.sound.sampled.FloatControl;
  * Riproduce effetti e musica dai file WAV delle risorse, con il volume scelto nelle Opzioni.
  * Se un file manca o il computer non ha l'audio, resta in silenzio: lo segnala una volta sullo
  * standard error e il gioco va avanti. Java riproduce WAV, non MP3 né OGG.
+ * Le musiche si ripetono con una dissolvenza incrociata fra la fine e l'inizio, così il giro non si sente.
  */
 public class AudioPlayer {
 
     public static final int MIN_VOLUME = 0;
     public static final int MAX_VOLUME = 100;
+    /** Quanto dura la dissolvenza incrociata fra la fine e l'inizio di una musica in loop. */
+    static final double CROSSFADE_SECONDS = 5.0;
 
     private final Map<SoundEffect, Clip> effects = new EnumMap<>(SoundEffect.class);
     private final Map<Music, Clip> tracks = new EnumMap<>(Music.class);
@@ -59,7 +63,7 @@ public class AudioPlayer {
         }
         Clip clip = effects.get(effect);
         if (clip == null) {
-            clip = open(effect.resourcePath());
+            clip = open(effect.resourcePath(), false);
             if (clip == null) {
                 return;
             }
@@ -80,7 +84,7 @@ public class AudioPlayer {
         currentMusic = music;
         Clip clip = tracks.get(music);
         if (clip == null) {
-            clip = open(music.resourcePath());
+            clip = open(music.resourcePath(), true);
             if (clip == null) {
                 return;
             }
@@ -101,7 +105,8 @@ public class AudioPlayer {
         currentMusic = null;
     }
 
-    private Clip open(String resourcePath) {
+    // Con loop vero è una musica: la fine e l'inizio si sovrappongono, così al giro non si sente lo stacco.
+    private Clip open(String resourcePath, boolean loop) {
         if (unavailable.contains(resourcePath)) {
             return null;
         }
@@ -111,12 +116,69 @@ public class AudioPlayer {
         }
         // AudioSystem ha bisogno di poter tornare indietro nel flusso per riconoscere il formato.
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(new BufferedInputStream(resource))) {
+            AudioFormat format = stream.getFormat();
+            byte[] sound = stream.readAllBytes();
+            if (loop && canCrossfade(format)) {
+                sound = crossfadeLoop(sound, format, (int) Math.round(CROSSFADE_SECONDS * format.getFrameRate()));
+            }
             Clip clip = AudioSystem.getClip();
-            clip.open(stream);
+            clip.open(format, sound, 0, sound.length);
             return clip;
         } catch (Exception e) {
             return markUnavailable(resourcePath, e.getMessage());
         }
+    }
+
+    // La dissolvenza lavora sui campioni: serve PCM con segno a 16 bit, il formato dei WAV del gioco.
+    static boolean canCrossfade(AudioFormat format) {
+        return format.getEncoding() == AudioFormat.Encoding.PCM_SIGNED && format.getSampleSizeInBits() == 16;
+    }
+
+    /**
+     * Prepara una musica per il loop senza stacco: gli ultimi fadeFrames vengono sovrapposti ai primi, con la
+     * fine che sfuma mentre l'inizio cresce. Il risultato è più corto di fadeFrames: quando ricomincia, la
+     * traccia riparte proprio dal punto in cui la fine stava continuando, quindi il giro è continuo.
+     * Le curve sono a potenza costante (seno e coseno), così a metà dissolvenza il volume non cala.
+     * Se la traccia è troppo corta per la dissolvenza, resta com'è.
+     */
+    static byte[] crossfadeLoop(byte[] sound, AudioFormat format, int fadeFrames) {
+        int frameSize = format.getFrameSize();
+        int channels = format.getChannels();
+        int frames = sound.length / frameSize;
+        if (fadeFrames <= 0 || frames < 2 * fadeFrames) {
+            return sound;
+        }
+        boolean bigEndian = format.isBigEndian();
+        int outFrames = frames - fadeFrames;
+        byte[] out = new byte[outFrames * frameSize];
+        System.arraycopy(sound, 0, out, 0, out.length);
+
+        for (int i = 0; i < fadeFrames; i++) {
+            double t = (i + 0.5) / fadeFrames;
+            double fadeIn = Math.sin(t * Math.PI / 2);
+            double fadeOut = Math.cos(t * Math.PI / 2);
+            for (int c = 0; c < channels; c++) {
+                int head = i * frameSize + c * 2;
+                int tail = (outFrames + i) * frameSize + c * 2;
+                double mixed = sample(sound, head, bigEndian) * fadeIn + sample(sound, tail, bigEndian) * fadeOut;
+                int value = (int) Math.round(Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, mixed)));
+                writeSample(out, head, value, bigEndian);
+            }
+        }
+        return out;
+    }
+
+    private static int sample(byte[] data, int offset, boolean bigEndian) {
+        int first = data[offset];
+        int second = data[offset + 1];
+        return bigEndian ? (first << 8) | (second & 0xFF) : (second << 8) | (first & 0xFF);
+    }
+
+    private static void writeSample(byte[] data, int offset, int value, boolean bigEndian) {
+        byte high = (byte) (value >> 8);
+        byte low = (byte) value;
+        data[offset] = bigEndian ? high : low;
+        data[offset + 1] = bigEndian ? low : high;
     }
 
     private Clip markUnavailable(String resourcePath, String reason) {
