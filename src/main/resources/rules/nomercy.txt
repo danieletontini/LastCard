@@ -17,7 +17,8 @@ ROTAZIONE 0
 Giocando uno 0 tutti passano la propria mano al giocatore successivo nel senso di gioco.
 
 SENZA PIETÀ
-Chi arriva ad avere 25 o più carte in mano è eliminato.
+Chi arriva ad avere 25 o più carte in mano è eliminato: esce dal giro e le sue carte tornano negli scarti.
+Se resta un solo giocatore, la mano è sua.
 
 CARTE NUOVE
 - Salta tutti: tutti gli altri giocatori saltano il turno, e tocca di nuovo a chi l'ha giocata.
@@ -32,5 +33,11 @@ CARTE NUOVE
 - Jolly Rimescola Mani (una sola nel mazzo): chi lo gioca sceglie il colore, e le mani di tutti
   vengono scambiate a caso: ognuno riceve per intero la mano di un altro giocatore, mai la propria.
 
-PUNTEGGIO
-Numeri al loro valore, carte azione colorate 20 punti, jolly 50.
+PARTITA A PUNTI
+Chi chiude la mano incassa il valore delle carte rimaste agli avversari.
+- Numeri: il loro valore.
+- Carte azione colorate: 20 punti.
+- Jolly: 50 punti.
+Chi resta l'ultimo in gioco perché gli altri sono stati eliminati incassa anche il valore delle carte che gli eliminati avevano in mano quando sono usciti.
+L'eliminazione vale solo per la mano in corso: alla mano successiva gli eliminati rientrano in gioco con sette carte, e il loro punteggio resta.
+Vince chi raggiunge per primo l'obiettivo (1000 o 2000 punti).
