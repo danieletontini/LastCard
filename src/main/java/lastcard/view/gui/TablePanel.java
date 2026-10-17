@@ -13,7 +13,7 @@ import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
+import java.awt.geom.Area;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -67,6 +67,9 @@ public class TablePanel extends JPanel implements TableView {
     private static final float SMALL_BUTTON_SIZE = 11f;
     private static final float LAST_CARD_SIZE = 17f;
     private static final int ERROR_MILLIS = 2500;
+    // Le frecce del senso di gioco: tre per tratto, raccolte intorno alla metà.
+    private static final double[] ARROW_POSITIONS = { 0.4, 0.5, 0.6 };
+    private static final float ARROW_SIZE = 11f;
     // Il popup degli effetti: un secondo in tutto, con una breve comparsa e una dissolvenza alla fine.
     private static final int POPUP_MILLIS = 1000;
     private static final int POPUP_FADE_IN_MILLIS = 120;
@@ -420,45 +423,89 @@ public class TablePanel extends JPanel implements TableView {
         g.drawImage(scaledBackground, 0, 0, null);
     }
 
-    // Il percorso del giro: dal giocatore umano agli avversari in ordine e di nuovo all'umano, tratteggiato,
-    // con una freccia a metà di ogni tratto nel senso di gioco. Con un avversario solo è una linea dritta.
-    private void paintPath(Graphics2D g, List<Point2D.Double> seats, float s) {
-        if (seats.isEmpty()) {
+    // Il percorso del giro: una curva chiusa e morbida che passa dal giocatore umano, dagli avversari in ordine e
+    // torna all'umano, tratteggiata, con tre frecce per tratto nel senso di gioco. Ogni tratto è una curva di Bézier
+    // calcolata come spline di Catmull-Rom: passa per tutti i posti e cambia direzione senza spigoli.
+    // In due giocatori non c'è: il senso di gioco non conta.
+    // Il posto dell'umano è il cartellino del turno, sopra la sua mano: la curva arriva su un lato della scritta e
+    // riparte dall'altro, e in mezzo si interrompe, così sembra passarle dietro.
+    private void paintPath(Graphics2D g0, List<Point2D.Double> seats, float s) {
+        if (seats.size() < 2) {
             return;
         }
+        double tagY = turnTagY(s);
         List<Point2D.Double> points = new ArrayList<>();
-        Point2D.Double me = SeatLayout.viewer(getWidth(), getHeight());
-        points.add(me);
+        points.add(new Point2D.Double(getWidth() / 2.0, tagY));
         points.addAll(seats);
-        points.add(me);
 
+        Rectangle2D tag = tagBounds(g0, turnLabel(), getWidth() / 2.0, tagY, false, s);
+        // appena un filo di margine: la linea deve toccare il cartellino, non fermarsi prima
+        double margin = 1 * s;
+        Rectangle2D hidden = new Rectangle2D.Double(tag.getX() - margin, tag.getY() - margin,
+                tag.getWidth() + 2 * margin, tag.getHeight() + 2 * margin);
+        Area visible = new Area(new Rectangle2D.Double(0, 0, getWidth(), getHeight()));
+        visible.subtract(new Area(hidden));
+        Graphics2D g = (Graphics2D) g0.create();
+        try {
+            g.clip(visible);
+            paintLoop(g, points, hidden, s);
+        } finally {
+            g.dispose();
+        }
+    }
+
+    private void paintLoop(Graphics2D g, List<Point2D.Double> points, Rectangle2D hidden, float s) {
         float dash = 6 * s;
         g.setStroke(new BasicStroke(Math.max(1f, 1.5f * s), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10f,
                 new float[] { dash, dash }, 0f));
         g.setColor(PATH);
-        for (int i = 0; i + 1 < points.size(); i++) {
-            g.draw(new Line2D.Double(points.get(i), points.get(i + 1)));
+
+        int n = points.size();
+        List<Point2D.Double[]> segments = new ArrayList<>();
+        Path2D.Double loop = new Path2D.Double();
+        loop.moveTo(points.get(0).x, points.get(0).y);
+        for (int i = 0; i < n; i++) {
+            Point2D.Double before = points.get((i - 1 + n) % n);
+            Point2D.Double from = points.get(i);
+            Point2D.Double to = points.get((i + 1) % n);
+            Point2D.Double after = points.get((i + 2) % n);
+            Point2D.Double c1 = new Point2D.Double(from.x + (to.x - before.x) / 6, from.y + (to.y - before.y) / 6);
+            Point2D.Double c2 = new Point2D.Double(to.x - (after.x - from.x) / 6, to.y - (after.y - from.y) / 6);
+            loop.curveTo(c1.x, c1.y, c2.x, c2.y, to.x, to.y);
+            segments.add(new Point2D.Double[] { from, c1, c2, to });
         }
-        if (seats.size() == 1) {
-            return;
-        }
-        g.setStroke(new BasicStroke(Math.max(1f, 1.8f * s), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        for (int i = 0; i + 1 < points.size(); i++) {
-            Point2D.Double from = clockwise ? points.get(i) : points.get(i + 1);
-            Point2D.Double to = clockwise ? points.get(i + 1) : points.get(i);
-            paintArrow(g, from, to, 7 * s);
+        loop.closePath();
+        g.draw(loop);
+
+        g.setStroke(new BasicStroke(Math.max(1.5f, 2.4f * s), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        for (Point2D.Double[] segment : segments) {
+            for (double t : ARROW_POSITIONS) {
+                paintArrow(g, segment, t, ARROW_SIZE * s, hidden);
+            }
         }
     }
 
-    // Una punta di freccia aperta, a metà del tratto, che guarda da from verso to.
-    private void paintArrow(Graphics2D g, Point2D.Double from, Point2D.Double to, double size) {
-        double angle = Math.atan2(to.y - from.y, to.x - from.x);
-        double mx = (from.x + to.x) / 2;
-        double my = (from.y + to.y) / 2;
+    // Una punta di freccia aperta sul tratto di curva, al punto t (da 0 a 1), che guarda nel senso di gioco.
+    // Se cadrebbe dietro il cartellino del turno non si disegna: se ne vedrebbe solo un pezzo.
+    private void paintArrow(Graphics2D g, Point2D.Double[] bezier, double t, double size, Rectangle2D hidden) {
+        double u = 1 - t;
+        Point2D.Double p0 = bezier[0];
+        Point2D.Double p1 = bezier[1];
+        Point2D.Double p2 = bezier[2];
+        Point2D.Double p3 = bezier[3];
+        double x = u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
+        double y = u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
+        if (hidden.intersects(x - size, y - size, 2 * size, 2 * size)) {
+            return;
+        }
+        // la tangente della curva in t: la direzione in cui si sta andando
+        double dx = 3 * u * u * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x);
+        double dy = 3 * u * u * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y);
+        double angle = Math.atan2(dy, dx) + (clockwise ? 0 : Math.PI);
         Path2D.Double head = new Path2D.Double();
-        head.moveTo(mx - size * Math.cos(angle - Math.PI / 5), my - size * Math.sin(angle - Math.PI / 5));
-        head.lineTo(mx, my);
-        head.lineTo(mx - size * Math.cos(angle + Math.PI / 5), my - size * Math.sin(angle + Math.PI / 5));
+        head.moveTo(x - size * Math.cos(angle - Math.PI / 5), y - size * Math.sin(angle - Math.PI / 5));
+        head.lineTo(x, y);
+        head.lineTo(x - size * Math.cos(angle + Math.PI / 5), y - size * Math.sin(angle + Math.PI / 5));
         g.draw(head);
     }
 
@@ -675,23 +722,16 @@ public class TablePanel extends JPanel implements TableView {
         }
 
         // il cartellino del turno sopra la mano, e sopra ancora l'eventuale errore
-        double tagY = baseY - 28 * s;
-        String turn;
+        double tagY = turnTagY(s);
         Color color;
-        if (state.state() == GameState.FINISHED) {
-            turn = "PARTITA FINITA";
-            color = ArcadeButtonUI.CREAM;
-        } else if (state.state() == GameState.HAND_OVER) {
-            turn = "MANO FINITA";
+        if (state.state() == GameState.FINISHED || state.state() == GameState.HAND_OVER) {
             color = ArcadeButtonUI.CREAM;
         } else if (isActing()) {
-            turn = turnText();
             color = TURN;
         } else {
-            turn = "TOCCA A " + state.currentPlayerName().toUpperCase();
             color = ArcadeButtonUI.TEXT_MUTED;
         }
-        paintTag(g, turn, cx, tagY, color, null, s);
+        paintTag(g, turnLabel(), cx, tagY, color, null, s);
         if (errorText != null) {
             g.setFont(ArcadeFont.of(TAG_SIZE * s));
             FontMetrics fm = g.getFontMetrics();
@@ -699,6 +739,25 @@ public class TablePanel extends JPanel implements TableView {
             g.setColor(ERROR);
             g.drawString(text, (float) (cx - fm.stringWidth(text) / 2.0), (float) (tagY - 26 * s));
         }
+    }
+
+    // Il cartellino del turno sopra la mano: a che altezza sta e che cosa dice.
+    private double turnTagY(float s) {
+        int cardHeight = CardRenderer.heightFor(Math.round(HAND_CARD * s));
+        return getHeight() - cardHeight * 0.80 - 28 * s;
+    }
+
+    private String turnLabel() {
+        if (state.state() == GameState.FINISHED) {
+            return "PARTITA FINITA";
+        }
+        if (state.state() == GameState.HAND_OVER) {
+            return "MANO FINITA";
+        }
+        if (isActing()) {
+            return turnText();
+        }
+        return "TOCCA A " + state.currentPlayerName().toUpperCase();
     }
 
     private String turnText() {
@@ -743,16 +802,27 @@ public class TablePanel extends JPanel implements TableView {
     }
 
     // Un cartellino centrato in (cx, cy): fondo scuro, bordo, testo; con swatch, un quadratino colorato prima.
+    // Dove sta un cartellino senza disegnarlo: serve al percorso del giro per passargli dietro.
+    private Rectangle2D tagBounds(Graphics2D g, String text, double cx, double cy, boolean swatch, float s) {
+        FontMetrics fm = g.getFontMetrics(ArcadeFont.of(TAG_SIZE * s));
+        double square = swatch ? fm.getAscent() : 0;
+        double squareGap = swatch ? 8 * s : 0;
+        double w = fm.stringWidth(text) + square + squareGap + 2 * (12 * s);
+        double h = 26 * s;
+        return new Rectangle2D.Double(cx - w / 2, cy - h / 2, w, h);
+    }
+
     private void paintTag(Graphics2D g, String text, double cx, double cy, Color textColor, Color swatch, float s) {
         g.setFont(ArcadeFont.of(TAG_SIZE * s));
         FontMetrics fm = g.getFontMetrics();
         double square = swatch == null ? 0 : fm.getAscent();
         double squareGap = swatch == null ? 0 : 8 * s;
         double padX = 12 * s;
-        double h = 26 * s;
-        double w = fm.stringWidth(text) + square + squareGap + 2 * padX;
-        double x = cx - w / 2;
-        double y = cy - h / 2;
+        Rectangle2D bounds = tagBounds(g, text, cx, cy, swatch != null, s);
+        double w = bounds.getWidth();
+        double h = bounds.getHeight();
+        double x = bounds.getX();
+        double y = bounds.getY();
         Shape box = new RoundRectangle2D.Double(x, y, w, h, 6 * s, 6 * s);
         g.setColor(BOX_FILL);
         g.fill(box);

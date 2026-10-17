@@ -15,8 +15,6 @@ final class SeatLayout {
 
     /** Il centro dell'ellisse, in proporzione all'altezza: un po' sopra la metà, perché sotto c'è la mano. */
     private static final double CENTER_Y = 0.46;
-    /** Dove l'umano "si siede": il punto del percorso sopra la sua mano. */
-    private static final double VIEWER_Y = 0.73;
     private static final double MAX_HALF_SPAN = 140;
     private static final double FIRST_HALF_SPAN = 30;
     private static final double HALF_SPAN_STEP = 25;
@@ -51,11 +49,6 @@ final class SeatLayout {
             seats.add(new Point2D.Double(x, y));
         }
         return seats;
-    }
-
-    /** Il punto del giocatore umano, da cui parte e a cui torna il percorso del giro. */
-    static Point2D.Double viewer(double width, double height) {
-        return new Point2D.Double(width / 2, height * VIEWER_Y);
     }
 
     private static double clamp(double value, double min, double max) {
