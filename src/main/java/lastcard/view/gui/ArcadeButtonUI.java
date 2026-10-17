@@ -28,8 +28,8 @@ import javax.swing.plaf.basic.BasicHTML;
  * disegna come PRIMARY: è così che ChoiceGroup mostra la scelta attiva.
  *
  * Stati: mouse sopra o focus da tastiera schiariscono il bordo; premuto, il pulsante scende sulla
- * sua ombra; disattivato, si spegne. Il testo semplice va in maiuscolo; il testo HTML (i pulsanti su
- * due righe di Gioca) lo disegna Swing, con il colore del tema.
+ * sua ombra; disattivato, si spegne. Il testo semplice va in maiuscolo; il testo HTML (per un pulsante
+ * su due righe) lo disegna Swing, con il colore del tema.
  */
 public class ArcadeButtonUI extends BasicButtonUI {
 

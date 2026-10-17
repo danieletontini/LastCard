@@ -21,7 +21,6 @@ class NavigatorTest {
     private static Navigator atTheTable() {
         Navigator navigator = navigator();
         navigator.show(Screen.MAIN_MENU);
-        navigator.show(Screen.PLAY);
         navigator.show(Screen.NEW_GAME);
         navigator.show(Screen.TABLE);
         return navigator;
@@ -31,11 +30,11 @@ class NavigatorTest {
     void backGoesThroughTheScreensInReverseOrder() {
         Navigator navigator = navigator();
         navigator.show(Screen.MAIN_MENU);
-        navigator.show(Screen.PLAY);
         navigator.show(Screen.NEW_GAME);
+        navigator.show(Screen.RULES);
 
         navigator.back();
-        assertEquals(Screen.PLAY, navigator.current());
+        assertEquals(Screen.NEW_GAME, navigator.current());
         navigator.back();
         assertEquals(Screen.MAIN_MENU, navigator.current());
         navigator.back();
@@ -49,8 +48,6 @@ class NavigatorTest {
         navigator.show(Screen.NEW_GAME);
         navigator.back();
 
-        assertEquals(Screen.PLAY, navigator.current());
-        navigator.back();
         assertEquals(Screen.MAIN_MENU, navigator.current());
     }
 
@@ -75,6 +72,6 @@ class NavigatorTest {
         navigator.show(Screen.NEW_GAME);
         navigator.back();
 
-        assertEquals(Screen.PLAY, navigator.current(), "anche dopo più partite di fila");
+        assertEquals(Screen.MAIN_MENU, navigator.current(), "anche dopo più partite di fila");
     }
 }

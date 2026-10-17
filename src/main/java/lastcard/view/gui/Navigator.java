@@ -46,7 +46,7 @@ public class Navigator {
      * Mostra una schermata e ricorda quella di partenza, per poterci tornare con back().
      * Se la schermata è già nel percorso fatto, si torna indietro fino a lei: le schermate lasciate in mezzo
      * escono dalla cronologia. Così dal tavolo a fine partita "Nuova partita" riporta a Nuova partita come se
-     * si fosse tornati indietro, e da lì Indietro va a Gioca, non al tavolo della partita finita.
+     * si fosse tornati indietro, e da lì Indietro va al menu principale, non al tavolo della partita finita.
      */
     public void show(Screen screen) {
         Objects.requireNonNull(screen, "screen");

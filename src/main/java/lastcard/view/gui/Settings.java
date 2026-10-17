@@ -5,7 +5,7 @@ import java.util.prefs.Preferences;
 
 /**
  * Le impostazioni della schermata Opzioni: schermo intero, muto e volume.
- * Sono della vista, non del gioco: le regole si scelgono in Gioca. Ogni modifica viene salvata subito
+ * Sono della vista, non del gioco: le regole si scelgono in Nuova partita. Ogni modifica viene salvata subito
  * con Preferences, così alla prossima apertura il gioco riparte con le stesse scelte.
  */
 public class Settings {

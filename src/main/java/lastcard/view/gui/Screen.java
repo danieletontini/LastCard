@@ -5,7 +5,6 @@ public enum Screen {
     MAIN_MENU,
     RULES,
     OPTIONS,
-    PLAY,
     NEW_GAME,
     TABLE,
 }

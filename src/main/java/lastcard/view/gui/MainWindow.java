@@ -41,7 +41,6 @@ public class MainWindow extends JFrame implements MenuView {
         // Le mosse delle CPU sono distanziate da un timer di Swing.
         AppController controller = new AppController(this, new SwingTurnScheduler());
         navigator.register(Screen.MAIN_MENU, new MainMenuPanel(navigator));
-        navigator.register(Screen.PLAY, new PlayPanel(navigator));
         navigator.register(Screen.NEW_GAME, new NewGamePanel(navigator, controller));
         navigator.register(Screen.TABLE, table);
         navigator.register(Screen.RULES, new RulesPanel(navigator));

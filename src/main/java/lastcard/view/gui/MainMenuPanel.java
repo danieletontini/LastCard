@@ -41,7 +41,7 @@ public class MainMenuPanel extends ArcadeBackgroundPanel {
         play.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                navigator.show(Screen.PLAY);
+                navigator.show(Screen.NEW_GAME);
             }
         });
 
