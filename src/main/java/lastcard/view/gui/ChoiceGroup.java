@@ -1,6 +1,7 @@
 package lastcard.view.gui;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ public class ChoiceGroup<E extends Enum<E>> extends JPanel {
 
     public ChoiceGroup(E[] values, Map<E, String> labels, E initial) {
         super(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        // Trasparente: i pulsanti stanno sopra lo sfondo della schermata.
+        setOpaque(false);
         Objects.requireNonNull(values, "values");
         Objects.requireNonNull(labels, "labels");
         Objects.requireNonNull(initial, "initial");
@@ -62,6 +65,16 @@ public class ChoiceGroup<E extends Enum<E>> extends JPanel {
         Objects.requireNonNull(value, "value");
         buttons.get(value).setSelected(true);
         selection = value;
+    }
+
+    /** Il font dei pulsanti e lo spazio fra l'uno e l'altro: servono quando la schermata cambia scala. */
+    public void setButtonFont(Font font, int gap) {
+        Objects.requireNonNull(font, "font");
+        for (JToggleButton button : buttons.values()) {
+            button.setFont(font);
+        }
+        ((FlowLayout) getLayout()).setHgap(gap);
+        revalidate();
     }
 
     /** Cambia le etichette dei pulsanti, per esempio i punti dell'obiettivo quando cambia la modalità. */

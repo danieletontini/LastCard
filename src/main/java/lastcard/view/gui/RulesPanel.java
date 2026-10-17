@@ -1,6 +1,5 @@
 package lastcard.view.gui;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -58,7 +57,6 @@ public class RulesPanel extends ArcadeBackgroundPanel {
     private static final int SCROLLBAR_WIDTH = 10;
     private static final int GAP = 14;
 
-    private static final Color BOX_FILL = new Color(0x15, 0x16, 0x1B, 235);
     private static final Color BODY_TEXT = new Color(0xE9E4D6);
     private static final String BODY_FONT = Font.SANS_SERIF;
 
@@ -76,7 +74,7 @@ public class RulesPanel extends ArcadeBackgroundPanel {
     private final BorderLayout topLayout;
     private final CardLayout contentLayout;
     private final JPanel content;
-    private final JPanel box;
+    private final ArcadeBox box;
     private final JPanel boxHolder;
     private final List<RulesText> texts;
     private float scale;
@@ -153,24 +151,7 @@ public class RulesPanel extends ArcadeBackgroundPanel {
         noMercyButton.addActionListener(e -> showRules(NO_MERCY, noMercy));
 
         // Il riquadro scuro, largo al massimo TEXT_MAX_WIDTH: righe troppo lunghe si leggono male.
-        this.box = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g0) {
-                Graphics2D g = (Graphics2D) g0.create();
-                try {
-                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    double arc = 12 * scale;
-                    g.setColor(BOX_FILL);
-                    g.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), arc, arc));
-                    g.setStroke(new BasicStroke(2f * scale));
-                    g.setColor(ArcadeButtonUI.EDGE);
-                    g.draw(new RoundRectangle2D.Double(1, 1, getWidth() - 2, getHeight() - 2, arc, arc));
-                } finally {
-                    g.dispose();
-                }
-            }
-        };
-        box.setOpaque(false);
+        this.box = new ArcadeBox(new BorderLayout());
         box.add(content, BorderLayout.CENTER);
         this.boxHolder = new JPanel(new BorderLayout());
         boxHolder.setOpaque(false);
@@ -209,6 +190,7 @@ public class RulesPanel extends ArcadeBackgroundPanel {
         tabsLayout.setHgap(gap);
         topLayout.setVgap(gap);
 
+        box.setScale(scale);
         int padding = Math.round(BOX_PADDING * scale);
         box.setBorder(new EmptyBorder(padding, padding, padding, Math.max(4, padding / 2)));
         for (RulesText text : texts) {
