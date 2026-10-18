@@ -22,23 +22,30 @@ public class ConsoleView implements GameView, GameObserver {
 
     private final CardFormatter formatter;
     private final Scanner in;
+    // Il controller della partita in corso: arriva con run(), serve a fine mano per lasciare la partita.
+    private GameController controller;
 
     public ConsoleView(CardFormatter formatter, Scanner in) {
         this.formatter = Objects.requireNonNull(formatter, "formatter");
         this.in = Objects.requireNonNull(in, "in");
+        this.controller = null;
     }
 
     /**
-     * Avvia la partita e legge i comandi da tastiera finché non c'è un vincitore.
+     * Avvia la partita e legge i comandi da tastiera finché non c'è un vincitore o il giocatore la lascia.
      * Il controller arriva qui e non nel costruttore, perché il controller ha già bisogno della vista per nascere.
      */
     public void run(GameController controller) {
-        Objects.requireNonNull(controller, "controller");
+        this.controller = Objects.requireNonNull(controller, "controller");
         controller.start();
         while (!controller.isGameOver()) {
             System.out.print("> ");
             if (!in.hasNextLine()) {
-                return;     // input chiuso (Ctrl+D): si esce senza errori
+                // Input chiuso (Ctrl+D): la partita si lascia, senza errori.
+                System.out.println();
+                System.out.println("Input chiuso: la partita viene abbandonata.");
+                controller.onLeaveGame();
+                return;
             }
             String command = in.nextLine().trim().toLowerCase();
             if (!command.isEmpty()) {
@@ -47,9 +54,14 @@ public class ConsoleView implements GameView, GameObserver {
         }
     }
 
-    // Traduce un comando in un'azione del controller: numero = gioca, d = pesca, k = passa, u = Ultima!
+    // Traduce un comando in un'azione del controller: numero = gioca, d = pesca, k = passa, u = Ultima!, q = esci
     private void handleCommand(String command, GameController controller) {
-        if (command.equals("d")) {
+        if (command.equals("q")) {
+            if (confirmLeave()) {
+                System.out.println("Partita abbandonata.");
+                controller.onLeaveGame();
+            }
+        } else if (command.equals("d")) {
             controller.onDraw();
         } else if (command.equals("k")) {
             controller.onPass();
@@ -59,7 +71,7 @@ public class ConsoleView implements GameView, GameObserver {
             try {
                 controller.onCardSelected(Integer.parseInt(command));
             } catch (NumberFormatException e) {
-                showError("Comando non riconosciuto. Usa un numero, d, k oppure u.");
+                showError("Comando non riconosciuto. Usa un numero, d, k, u oppure q.");
             }
         }
     }
@@ -86,10 +98,21 @@ public class ConsoleView implements GameView, GameObserver {
             int drawnIndex = state.currentHand().size() - 1;
             System.out.println("Hai pescato " + formatter.format(state.currentHand().get(drawnIndex))
                     + ": puoi giocarla o passare.");
-            System.out.println("Comandi: " + drawnIndex + " = gioca la carta pescata, k = passa, u = Ultima!");
+            System.out.println("Comandi: " + drawnIndex + " = gioca la carta pescata, k = passa, u = Ultima!, q = esci");
         } else {
-            System.out.println("Comandi: numero = gioca la carta, d = pesca, u = Ultima!");
+            System.out.println("Comandi: numero = gioca la carta, d = pesca, u = Ultima!, q = esci");
         }
+    }
+
+    // Chiede conferma prima di lasciare la partita, così una q digitata per sbaglio non la butta via.
+    private boolean confirmLeave() {
+        System.out.println("Vuoi davvero abbandonare la partita? (s/n)");
+        System.out.print("> ");
+        if (!in.hasNextLine()) {
+            return true;
+        }
+        String answer = in.nextLine().trim().toLowerCase();
+        return answer.equals("s");
     }
 
     @Override
@@ -164,10 +187,18 @@ public class ConsoleView implements GameView, GameObserver {
         for (PlayerSummary player : players) {
             System.out.println("  " + player.name() + ": " + player.score() + " punti");
         }
-        System.out.println("Premi Invio per iniziare la prossima mano.");
-        // Con l'input chiuso (Ctrl+D) non si aspetta: la partita continua e il ciclo dei comandi si ferma da solo.
-        if (in.hasNextLine()) {
-            in.nextLine();
+        System.out.println("Premi Invio per iniziare la prossima mano, oppure q per tornare al menu.");
+        System.out.print("> ");
+        // Con l'input chiuso (Ctrl+D) non si può più giocare: la partita si lascia.
+        if (!in.hasNextLine()) {
+            System.out.println();
+            controller.onLeaveGame();
+            return;
+        }
+        String answer = in.nextLine().trim().toLowerCase();
+        if (answer.equals("q")) {
+            System.out.println("Partita abbandonata.");
+            controller.onLeaveGame();
         }
     }
 

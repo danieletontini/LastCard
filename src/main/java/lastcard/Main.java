@@ -29,7 +29,7 @@ public class Main {
 
     /**
      * Sceglie la vista: --console per il terminale, --gui (o nessun argomento) per la finestra.
-     * Nel terminale modalità, numero di CPU e obiettivo si scelgono dal menu iniziale.
+     * Nel terminale si parte dal menu principale: modalità, numero di CPU e obiettivo si scelgono a ogni nuova partita.
      */
     public static void main(String[] args) {
         String mode = "--gui";
@@ -53,11 +53,25 @@ public class Main {
         System.out.println("Uso: --gui (predefinito) oppure --console");
     }
 
+    // Dal menu principale si gioca una partita dopo l'altra, finché il giocatore sceglie Esci.
     private static void runConsole() {
         Scanner in = new Scanner(System.in);
+        ConsoleMenu menu = new ConsoleMenu(in);
         ConsoleView view = new ConsoleView(new CardFormatter(), in);
+        // I suoni della partita sono un altro observer: la console e il modello non sanno che esiste l'audio.
+        AudioPlayer audio = new AudioPlayer();
+        audio.setVolume(new Settings().effectiveVolume());
+        GameSounds sounds = new GameSounds(audio::play);
 
-        GameSettings settings = new ConsoleMenu(in).askSettings();
+        while (menu.askNewGame()) {
+            GameSettings settings = menu.askSettings();
+            playConsoleGame(settings, view, sounds);
+        }
+        System.out.println("Alla prossima!");
+    }
+
+    // Una partita da terminale con le impostazioni scelte: ritorna quando c'è un vincitore o il giocatore la lascia.
+    private static void playConsoleGame(GameSettings settings, ConsoleView view, GameSounds sounds) {
         List<String> names = new ArrayList<>();
         List<CpuPlayer> cpus = new ArrayList<>();
         names.add(HUMAN_NAME);
@@ -70,10 +84,7 @@ public class Main {
 
         // La vista va registrata prima di avviare la partita, per ricevere anche la prima carta scoperta.
         game.addObserver(view);
-        // I suoni della partita sono un altro observer: la console e il modello non sanno che esiste l'audio.
-        AudioPlayer audio = new AudioPlayer();
-        audio.setVolume(new Settings().effectiveVolume());
-        game.addObserver(new GameSounds(audio::play));
+        game.addObserver(sounds);
         GameController controller = new GameController(game, view, cpus);
         view.run(controller);
     }

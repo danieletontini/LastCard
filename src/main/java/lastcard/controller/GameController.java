@@ -32,11 +32,14 @@ public class GameController {
     private final GameView view;
     // Le CPU della partita, cercate per nome. Chi non è qui è un giocatore umano.
     private final Map<String, CpuPlayer> cpus;
+    // Il giocatore ha lasciato la partita prima della fine: non si gioca più nessuna mossa.
+    private boolean left;
 
     public GameController(Game game, GameView view, List<CpuPlayer> cpus) {
         this.game = Objects.requireNonNull(game, "game");
         this.view = Objects.requireNonNull(view, "view");
         this.cpus = new HashMap<>();
+        this.left = false;
 
         Set<String> playerNames = new HashSet<>();
         for (Player player : game.getPlayers()) {
@@ -99,9 +102,14 @@ public class GameController {
         perform(new SwapHands(actingPlayerName(), targetName), "Non puoi scambiare la mano con questo giocatore.");
     }
 
-    /** Serve al ciclo della vista console per sapere quando fermarsi. */
+    /** Il giocatore lascia la partita a metà: la vista torna al menu e le CPU non giocano più. */
+    public void onLeaveGame() {
+        left = true;
+    }
+
+    /** Serve al ciclo della vista console per sapere quando fermarsi: c'è un vincitore oppure la partita è stata lasciata. */
     public boolean isGameOver() {
-        return game.isFinished();
+        return game.isFinished() || left;
     }
 
     // Esegue la mossa; se il modello la rifiuta mostra il messaggio in italiano, altrimenti il nuovo stato.
@@ -131,6 +139,10 @@ public class GameController {
         // poi si distribuisce la mano successiva, che può iniziare con il turno di una CPU.
         if (game.getState() == GameState.HAND_OVER) {
             view.showHandOver(game.getVisibleState().players());
+            // Dai punteggi il giocatore può tornare al menu invece di giocare la mano successiva.
+            if (left) {
+                return;
+            }
             game.startNextHand();
             showOutcome();
             return;
