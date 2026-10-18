@@ -297,7 +297,11 @@ public class TablePanel extends JPanel implements TableView {
             sounds.update(event);
         }
         // Il senso di gioco non sta nello stato visibile: lo si segue dagli eventi, per le frecce del percorso.
-        if (event.type() == GameEvent.Type.DIRECTION_REVERSED) {
+        // Ogni mano, anche la successiva di una partita a punti, comincia in senso orario: la prima carta scoperta
+        // arriva prima del suo eventuale cambio giro, quindi qui si riparte da capo.
+        if (event.type() == GameEvent.Type.GAME_STARTED) {
+            clockwise = true;
+        } else if (event.type() == GameEvent.Type.DIRECTION_REVERSED) {
             clockwise = !clockwise;
         }
         String text = TableTexts.describe(event, viewer);
