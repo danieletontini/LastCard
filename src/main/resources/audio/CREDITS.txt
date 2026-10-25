@@ -16,6 +16,6 @@ menu-music.wav      musica di sottofondo del menu, loop  https://pixabay.com/sou
 button-click.wav    pressione di un pulsante del menu    https://pixabay.com/sound-effects/film-special-effects-button-click-289742/            freesoundeffects     https://pixabay.com/service/license-summary/
 card-played.wav     carta giocata                        https://pixabay.com/sound-effects/film-special-effects-taking-playing-card-2-522516/   OxidVideos           https://pixabay.com/service/license-summary/
 card-drawn.wav      carta pescata                        https://pixabay.com/sound-effects/film-special-effects-flipcard-91468/                 Splashdust           https://pixabay.com/service/license-summary/
-last-card.wav       dichiarazione di "Ultima!"           ...                                                       ...                  ...
-penalty.wav         penalità per "Ultima!" dimenticato   ...                                                       ...                  ...
-victory.wav         vittoria                             ...                                                       ...                  ...
+last-card.wav       dichiarazione di "Ultima!"           TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
+penalty.wav         penalità per "Ultima!" dimenticato   TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
+victory.wav         vittoria                             TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
