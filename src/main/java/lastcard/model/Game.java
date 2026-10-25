@@ -166,10 +166,12 @@ public class Game {
         notifyObservers(GameEvent.gameStarted(initialCard));
         resolveCard(getCurrentPlayer(), initialCard);
 
-        // Jolly iniziale: il colore lo sceglie il primo giocatore. Con un +4 il turno è già passato
-        // a chi ha pescato, e il colore resta al mazziere.
+        // Jolly iniziale: il colore lo sceglie il primo giocatore, cioè quello dopo il mazziere nel senso di gioco
+        // attuale. Di solito è il primo della lista; con il Jolly Cambia Giro Pesca 4 del No Mercy il giro si è
+        // appena invertito, quindi è l'altro vicino del mazziere, lo stesso che dovrà rispondere alla penalità.
+        // Con un +4 classico il turno è già passato a chi ha pescato, e il colore resta al mazziere.
         if (state == GameState.AWAITING_COLOR && currentIndex == dealerIndex) {
-            lastPlayer = players.get(0);
+            lastPlayer = players.get(stepFrom(currentIndex, turnStep()));
         }
     }
 

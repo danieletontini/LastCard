@@ -97,6 +97,21 @@ class NoMercyRulesTest {
         assertEquals(4, game.getVisibleState().pendingDraw());
     }
 
+    @Test
+    void aReverseDrawFourAsFirstCardIsAnsweredByWhoChoosesTheColor() {
+        // Il mazziere è C. La carta inverte il giro: il primo a giocare è B, non A, ed è B a scegliere il colore
+        // e poi a dover rispondere alla penalità.
+        Game game = GameSetup.start(GameRules.noMercy(), ABC, List.of(hand(), hand(), hand()), new WildReverseDrawFour());
+
+        assertEquals(GameState.AWAITING_COLOR, game.getState());
+        assertEquals("B", game.getVisibleState().currentPlayerName(), "sceglie il colore il primo dopo il mazziere");
+
+        game.execute(new ChooseColor("B", CardColor.BLUE));
+
+        assertEquals("B", current(game), "e risponde alla penalità lo stesso giocatore");
+        assertEquals(4, game.getVisibleState().pendingDraw());
+    }
+
     // ------------------------------------------------------------------
     // eliminazione a 25 carte
     // ------------------------------------------------------------------
