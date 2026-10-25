@@ -1,0 +1,7 @@
+IMMAGINI DI ULTIMA CARTA
+
+File                    Dove si vede                         Fonte                                 Autore           Licenza
+----------------------  -----------------------------------  ------------------------------------  ---------------  ---------------
+menu-background.png     sfondo di menu, Regole, Opzioni,     DA COMPILARE                          DA COMPILARE     DA COMPILARE
+                        Nuova partita
+tavolo_3840x2160.jpg    panno verde del tavolo               DA COMPILARE                          DA COMPILARE     DA COMPILARE

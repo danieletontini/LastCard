@@ -11,6 +11,8 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- La classe da avviare con mvn exec:java; si cambia da riga di comando con -Dexec.mainClass=... -->
+    <exec.mainClass>lastcard.Main</exec.mainClass>
   </properties>
 
   <dependencies>
@@ -29,11 +31,27 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
-      <!-- mvn -q compile exec:java -Dexec.mainClass=lastcard.view.gui.CardPreview -->
+      <!-- Avvio: mvn compile exec:java apre la finestra; per il terminale si passa l'argomento della console
+           con -Dexec.args (il comando esatto è nel README, un commento XML non può contenere due trattini).
+           Anteprima delle carte: mvn -q compile exec:java -Dexec.mainClass=lastcard.view.gui.CardPreview -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.1.1</version>
+      </plugin>
+      <!-- mvn package crea un jar che si avvia con java -jar: la classe principale è scritta nel manifest.
+           Non ci sono dipendenze da includere, solo le risorse (font, immagini, suoni, regole), che sono già nel jar. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>lastcard.Main</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
       </plugin>
     </plugins>
   </build>
