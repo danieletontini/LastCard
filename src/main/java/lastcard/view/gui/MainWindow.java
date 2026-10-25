@@ -65,6 +65,8 @@ public class MainWindow extends JFrame implements MenuView {
 
     @Override
     public void showTable(GameSettings settings) {
+        // il tavolo mostra l'obiettivo e i punteggi solo nella partita a punti
+        table.setPointsGoal(settings.goal().points(settings.mode()));
         navigator.show(Screen.TABLE);
     }
 

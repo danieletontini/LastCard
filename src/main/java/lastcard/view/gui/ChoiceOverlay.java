@@ -120,7 +120,13 @@ final class ChoiceOverlay extends JPanel {
 
     /** Un contenuto qualsiasi sotto il titolo, come le opzioni, con le sue azioni in riga sotto. */
     void showContent(String title, JComponent content, List<String> labels, List<Runnable> actions, float scale) {
-        open(title, null, content, actionButtons(labels, actions), labels.size(), scale);
+        showContent(title, null, content, labels, actions, scale);
+    }
+
+    /** Come sopra, con una riga di spiegazione fra il titolo e il contenuto (null se non serve). */
+    void showContent(String title, String subtitle, JComponent content, List<String> labels, List<Runnable> actions,
+            float scale) {
+        open(title, subtitle, content, actionButtons(labels, actions), labels.size(), scale);
     }
 
     // Un pulsante per azione: il primo è quello principale, e ognuno chiude il form prima di agire.

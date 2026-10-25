@@ -60,6 +60,7 @@ public class TablePanel extends JPanel implements TableView {
     private static final int HOVER_LIFT = 22;
     private static final int BOX_WIDTH = 132;
     private static final int BOX_HEIGHT = 54;
+    private static final int BOX_HEIGHT_WITH_POINTS = 66;
     private static final int BOX_ICON = 22;
     private static final float NAME_SIZE = 11f;
     private static final float COUNT_SIZE = 8f;
@@ -103,6 +104,10 @@ public class TablePanel extends JPanel implements TableView {
     private long popupStart;
 
     private String viewer;
+    // Partita a punti: l'obiettivo (0 = mano singola) e chi ha chiuso l'ultima mano, con quanti punti.
+    private int pointsGoal;
+    private String handWinner;
+    private int handPoints;
     private TableActions actions;
     private VisibleState state;
     private boolean clockwise;
@@ -205,10 +210,21 @@ public class TablePanel extends JPanel implements TableView {
     // TableView: ciò che chiede il controller
     // ------------------------------------------------------------------
 
+    /**
+     * Quanti punti servono per vincere la partita che sta per cominciare, 0 per una mano sola. Lo dice la
+     * finestra quando mostra il tavolo, perché lo stato visibile non lo contiene: serve solo da mostrare.
+     */
+    public void setPointsGoal(int points) {
+        this.pointsGoal = Math.max(0, points);
+        repaint();
+    }
+
     @Override
     public void reset(String viewerName, TableActions tableActions) {
         this.viewer = viewerName;
         this.actions = tableActions;
+        this.handWinner = null;
+        this.handPoints = 0;
         this.state = null;
         this.clockwise = true;
         this.eventText = null;
@@ -259,21 +275,22 @@ public class TablePanel extends JPanel implements TableView {
     @Override
     public void showWinner(String winnerName) {
         boolean me = winnerName.equals(viewer);
-        overlay.showMessage(me ? "HAI VINTO!" : winnerName.toUpperCase() + " VINCE",
-                me ? "Hai chiuso la mano" : "La partita è finita",
-                List.of("Nuova partita", "Menu"),
-                List.of(() -> leaveTo(Screen.NEW_GAME), () -> leaveTo(Screen.MAIN_MENU)),
-                scale());
+        String title = me ? "HAI VINTO!" : winnerName.toUpperCase() + " VINCE";
+        List<String> labels = List.of("Nuova partita", "Menu");
+        List<Runnable> choices = List.of(() -> leaveTo(Screen.NEW_GAME), () -> leaveTo(Screen.MAIN_MENU));
+        float s = scale();
+        if (pointsGoal > 0 && state != null) {
+            // partita a punti: la classifica finale, con chi ha chiuso l'ultima mano evidenziato
+            overlay.showContent(title, handSummary(), ScoreBoard.of(state.players(), viewer, handWinner, handPoints, s),
+                    labels, choices, s);
+        } else {
+            overlay.showMessage(title, me ? "Hai chiuso la mano" : "La partita è finita", labels, choices, s);
+        }
         repaint();
     }
 
     @Override
     public void showHandOver(List<PlayerSummary> players) {
-        List<String> scores = new ArrayList<>();
-        for (PlayerSummary player : players) {
-            String name = player.name().equals(viewer) ? "Tu" : player.name();
-            scores.add(name + " " + player.score());
-        }
         Runnable nextHand = new Runnable() {
             @Override
             public void run() {
@@ -286,9 +303,20 @@ public class TablePanel extends JPanel implements TableView {
                 leaveTo(Screen.MAIN_MENU);
             }
         };
-        overlay.showMessage("MANO FINITA", "Punti: " + String.join(" · ", scores),
-                List.of("Prossima mano", "Menu"), List.of(nextHand, menu), scale());
+        float s = scale();
+        overlay.showContent("MANO FINITA", handSummary(), ScoreBoard.of(players, viewer, handWinner, handPoints, s),
+                List.of("Prossima mano", "Menu"), List.of(nextHand, menu), s);
         repaint();
+    }
+
+    // "Chiudi la mano: +137 punti · Obiettivo 500 punti", oppure con il nome di chi l'ha chiusa.
+    private String handSummary() {
+        String goal = "obiettivo " + points(pointsGoal).toLowerCase();
+        if (handWinner == null) {
+            return goal;
+        }
+        String who = handWinner.equals(viewer) ? "Chiudi la mano" : handWinner + " chiude la mano";
+        return who + ": +" + points(handPoints).toLowerCase() + " · " + goal;
     }
 
     @Override
@@ -303,6 +331,10 @@ public class TablePanel extends JPanel implements TableView {
             clockwise = true;
         } else if (event.type() == GameEvent.Type.DIRECTION_REVERSED) {
             clockwise = !clockwise;
+        } else if (event.type() == GameEvent.Type.HAND_WON) {
+            // per il form di fine mano: chi l'ha chiusa e quanti punti ha preso
+            handWinner = event.playerName();
+            handPoints = event.count();
         }
         String text = TableTexts.describe(event, viewer);
         if (text != null) {
@@ -387,7 +419,7 @@ public class TablePanel extends JPanel implements TableView {
             float s = scale();
             List<PlayerSummary> opponents = opponentsInTurnOrder();
             List<Point2D.Double> seats = SeatLayout.opponents(opponents.size(), getWidth(), getHeight(),
-                    BOX_WIDTH * s, BOX_HEIGHT * s, MARGIN * s);
+                    BOX_WIDTH * s, boxHeight() * s, MARGIN * s);
             paintPath(g, seats, s);
             for (int i = 0; i < opponents.size(); i++) {
                 paintOpponent(g, opponents.get(i), seats.get(i), s);
@@ -395,6 +427,7 @@ public class TablePanel extends JPanel implements TableView {
             paintCenter(g, s);
             paintHand(g, s);
             paintViewerBadge(g, s);
+            paintGoal(g, s);
             paintPopup(g, s);
         } finally {
             g.dispose();
@@ -513,11 +546,16 @@ public class TablePanel extends JPanel implements TableView {
         g.draw(head);
     }
 
-    // Un avversario: il dorso in piccolo, il nome e quante carte ha. Chi deve agire ha il bordo crema;
-    // chi ha una carta sola il bordo rosso, perché si noti; gli eliminati sono spenti.
+    // Nella partita a punti i riquadri degli avversari hanno una riga in più, per il punteggio.
+    private int boxHeight() {
+        return pointsGoal > 0 ? BOX_HEIGHT_WITH_POINTS : BOX_HEIGHT;
+    }
+
+    // Un avversario: il dorso in piccolo, il nome e quante carte ha; nella partita a punti, sotto, il punteggio.
+    // Chi deve agire ha il bordo crema; chi ha una carta sola il bordo rosso, perché si noti; gli eliminati sono spenti.
     private void paintOpponent(Graphics2D g, PlayerSummary player, Point2D.Double center, float s) {
         double w = BOX_WIDTH * s;
-        double h = BOX_HEIGHT * s;
+        double h = boxHeight() * s;
         double x = center.x - w / 2;
         double y = center.y - h / 2;
         boolean acting = player.name().equals(state.currentPlayerName());
@@ -542,15 +580,22 @@ public class TablePanel extends JPanel implements TableView {
             cards.drawBack(gb, ix, iy, icon);
 
             double tx = ix + icon + 10 * s;
+            // con la riga dei punti tutto il testo sale un poco, per restare al centro del riquadro
+            double shift = pointsGoal > 0 ? 6 * s : 0;
             gb.setFont(ArcadeFont.of(NAME_SIZE * s));
             gb.setColor(ArcadeButtonUI.CREAM);
-            gb.drawString(player.name().toUpperCase(), (float) tx, (float) (center.y - 2 * s));
+            gb.drawString(player.name().toUpperCase(), (float) tx, (float) (center.y - 2 * s - shift));
 
             gb.setFont(ArcadeFont.of(COUNT_SIZE * s));
             FontMetrics count = gb.getFontMetrics();
             String text = player.eliminated() ? "ELIMINATO" : TableTexts.cards(player.cardCount()).toUpperCase();
             gb.setColor(lastCardLeft ? ArcadeButtonUI.ALERT_HOVER : ArcadeButtonUI.TEXT_MUTED);
-            gb.drawString(text, (float) tx, (float) (center.y + 4 * s + count.getAscent()));
+            float countY = (float) (center.y + 4 * s + count.getAscent() - shift);
+            gb.drawString(text, (float) tx, countY);
+            if (pointsGoal > 0) {
+                gb.setColor(ArcadeButtonUI.CREAM);
+                gb.drawString(points(player.score()), (float) tx, (float) (countY + 12 * s));
+            }
         } finally {
             gb.dispose();
         }
@@ -788,6 +833,13 @@ public class TablePanel extends JPanel implements TableView {
     private void paintViewerBadge(Graphics2D g, float s) {
         String text = (viewer == null ? "" : viewer.toUpperCase()) + " / "
                 + TableTexts.cards(state.currentHand().size()).toUpperCase();
+        if (pointsGoal > 0) {
+            for (PlayerSummary player : state.players()) {
+                if (player.name().equals(viewer)) {
+                    text = text + " / " + points(player.score());
+                }
+            }
+        }
         g.setFont(ArcadeFont.of(TAG_SIZE * s));
         FontMetrics fm = g.getFontMetrics();
         double padX = 14 * s;
@@ -805,7 +857,22 @@ public class TablePanel extends JPanel implements TableView {
         g.drawString(text, (float) (x + padX), (float) (y + (h - fm.getHeight()) / 2 + fm.getAscent()));
     }
 
-    // Un cartellino centrato in (cx, cy): fondo scuro, bordo, testo; con swatch, un quadratino colorato prima.
+    // Partita a punti: in alto a destra, alla stessa altezza di Opzioni, quanti punti servono per vincere.
+    private void paintGoal(Graphics2D g, float s) {
+        if (pointsGoal <= 0) {
+            return;
+        }
+        String text = "OBIETTIVO: " + points(pointsGoal);
+        Rectangle2D bounds = tagBounds(g, text, 0, 0, false, s);
+        double cx = getWidth() - MARGIN * s - bounds.getWidth() / 2;
+        double cy = options.getY() + options.getHeight() / 2.0;
+        paintTag(g, text, cx, cy, ArcadeButtonUI.CREAM, null, s);
+    }
+
+    private static String points(int points) {
+        return points + (points == 1 ? " PUNTO" : " PUNTI");
+    }
+
     // Dove sta un cartellino senza disegnarlo: serve al percorso del giro per passargli dietro.
     private Rectangle2D tagBounds(Graphics2D g, String text, double cx, double cy, boolean swatch, float s) {
         FontMetrics fm = g.getFontMetrics(ArcadeFont.of(TAG_SIZE * s));
@@ -959,7 +1026,17 @@ public class TablePanel extends JPanel implements TableView {
         optionsControls.refresh();
         optionsOverlay.showContent("OPZIONI", optionsControls,
                 List.of("Riprendi", "Abbandona partita"),
-                List.of(this::resume, () -> leaveTo(Screen.MAIN_MENU)),
+                List.of(this::resume, () -> confirmLeave(scale())),
+                s);
+        repaint();
+    }
+
+    // Prima di abbandonare si chiede conferma, come da console: un clic sbagliato farebbe perdere la partita.
+    // La partita resta in pausa; Annulla riporta al form Opzioni.
+    private void confirmLeave(float s) {
+        optionsOverlay.showMessage("ABBANDONARE LA PARTITA?", "La partita in corso andrà persa",
+                List.of("Annulla", "Abbandona"),
+                List.of(() -> showOptionsForm(scale()), () -> leaveTo(Screen.MAIN_MENU)),
                 s);
         repaint();
     }
