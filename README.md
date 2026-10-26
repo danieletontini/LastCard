@@ -28,8 +28,8 @@ Oppure si crea il jar e lo si avvia:
 
 ```bash
 mvn package
-java -jar target/lastcard-1.0-SNAPSHOT.jar            # finestra
-java -jar target/lastcard-1.0-SNAPSHOT.jar --console  # terminale
+java -jar target/lastcard.jar            # finestra
+java -jar target/lastcard.jar --console  # terminale
 ```
 
 Da VS Code: aprire `src/main/java/lastcard/Main.java` e premere *Run*.

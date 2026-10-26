@@ -25,6 +25,8 @@
   </dependencies>
 
   <build>
+    <!-- Il jar si chiama target/lastcard.jar,
+    <finalName>lastcard</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
