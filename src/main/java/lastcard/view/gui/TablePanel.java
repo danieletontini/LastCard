@@ -594,7 +594,7 @@ public class TablePanel extends JPanel implements TableView {
             gb.drawString(text, (float) tx, countY);
             if (pointsGoal > 0) {
                 gb.setColor(ArcadeButtonUI.CREAM);
-                gb.drawString(points(player.score()), (float) tx, (float) (countY + 12 * s));
+                gb.drawString(points(player.score()), (float) tx, countY + 12 * s);
             }
         } finally {
             gb.dispose();

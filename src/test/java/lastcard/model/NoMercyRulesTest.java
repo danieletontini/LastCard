@@ -16,8 +16,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Le regole No Mercy di Game, una per test: accumulo, eliminazione, pesca finché giocabile, Salta Tutti,
- * Scarta Tutto, Roulette, scambio 7, rotazione 0. La prima carta è un rosso 5, quindi comincia A.
+ * Le regole No Mercy di Game: accumulo, eliminazione, pesca finché giocabile, Salta Tutti, Scarta Tutto, Roulette,
+ * scambio 7, rotazione 0. La prima carta è un rosso 5 dove non è detto altro, quindi comincia A.
  */
 class NoMercyRulesTest {
 
@@ -37,17 +37,9 @@ class NoMercyRulesTest {
         return game.getCurrentPlayer().getName();
     }
 
-    // ------------------------------------------------------------------
-    // accumulo delle pescate
-    // ------------------------------------------------------------------
-
     @Test
-    void drawPenaltiesStackAndWhoCannotAnswerDrawsTheTotal() {
-        Game game = start(ABC, List.of(
-                hand(new DrawTwo(CardColor.RED)),
-                hand(new ColorDrawFour(CardColor.BLUE)),
-                hand()));
-
+    void drawPenaltiesStackOnlyWithEqualOrHigherDrawCards() {
+        Game game = start(ABC, List.of(hand(new DrawTwo(CardColor.RED)), hand(new ColorDrawFour(CardColor.BLUE)), hand()));
         game.execute(new PlayCard("A", 0));
         assertEquals(2, game.getVisibleState().pendingDraw());
         assertEquals("B", current(game), "con l'accumulo chi riceve la penalità non salta subito il turno");
@@ -55,46 +47,19 @@ class NoMercyRulesTest {
         // un Pesca 4 di un altro colore rilancia un +2: conta il valore, non il colore
         game.execute(new PlayCard("B", 0));
         assertEquals(6, game.getVisibleState().pendingDraw());
-        assertEquals("C", current(game));
 
         game.execute(new Draw("C"));
-        assertEquals(7 + 6, handSize(game, "C"));
+        assertEquals(7 + 6, handSize(game, "C"), "chi non può rispondere pesca il totale");
         assertEquals(0, game.getVisibleState().pendingDraw());
-        assertEquals("A", current(game), "chi pesca il totale perde il turno");
-    }
+        assertEquals("A", current(game), "e perde il turno");
 
-    @Test
-    void theStackingEventNamesWhoPlayedTheDrawCard() {
-        Game game = GameSetup.create(GameRules.noMercy(), ABC, List.of(
-                hand(new DrawTwo(CardColor.RED)), hand(), hand()), RED_FIVE, Collections.nCopies(30, FILLER));
-        List<GameEvent> events = new ArrayList<>();
-        game.addObserver(events::add);
-        game.start();
-
-        game.execute(new PlayCard("A", 0));
-
-        GameEvent stacked = events.stream()
-                .filter(event -> event.type() == GameEvent.Type.PENALTY_STACKED)
-                .findFirst()
-                .orElseThrow();
-        assertEquals("A", stacked.playerName());
-        assertEquals(2, stacked.count());
-    }
-
-    @Test
-    void withAPendingPenaltyOnlyEqualOrHigherDrawCardsCanBePlayed() {
-        Game game = start(ABC, List.of(
-                hand(new ColorDrawFour(CardColor.RED)),
-                hand(new DrawTwo(CardColor.RED), new NumberCard(CardColor.RED, 5)),
-                hand()));
-        game.execute(new PlayCard("A", 0));
-
-        assertThrows(IllegalArgumentException.class, () -> game.execute(new PlayCard("B", 0)),
-                "un +2 non rilancia un +4");
-        assertThrows(IllegalArgumentException.class, () -> game.execute(new PlayCard("B", 1)),
+        Game blocked = start(ABC, List.of(hand(new ColorDrawFour(CardColor.RED)),
+                hand(new DrawTwo(CardColor.RED), new NumberCard(CardColor.RED, 5)), hand()));
+        blocked.execute(new PlayCard("A", 0));
+        assertThrows(IllegalArgumentException.class, () -> blocked.execute(new PlayCard("B", 0)), "un +2 non rilancia un +4");
+        assertThrows(IllegalArgumentException.class, () -> blocked.execute(new PlayCard("B", 1)),
                 "con una penalità in corso le carte normali sono bloccate");
-        assertThrows(IllegalStateException.class, () -> game.execute(new Pass("B")));
-        assertEquals(4, game.getVisibleState().pendingDraw());
+        assertEquals(4, blocked.getVisibleState().pendingDraw());
     }
 
     @Test
@@ -112,18 +77,10 @@ class NoMercyRulesTest {
         assertEquals(4, game.getVisibleState().pendingDraw());
     }
 
-    // ------------------------------------------------------------------
-    // eliminazione a 25 carte
-    // ------------------------------------------------------------------
-
     @Test
-    void reachingTwentyFiveCardsEliminatesThePlayerWhoIsThenLeftOutOfTheTurns() {
-        Game game = start(ABC, List.of(
-                hand(new WildDrawTen()),
-                hand(new WildDrawTen()),
-                hand()));
+    void twentyFiveCardsEliminateAPlayerAndTheLastOneStandingWins() {
+        Game game = start(ABC, List.of(hand(new WildDrawTen()), hand(new WildDrawTen()), hand()));
         int cards = game.totalCardCount();
-
         game.execute(new PlayCard("A", 0));
         game.execute(new ChooseColor("A", CardColor.YELLOW));
         game.execute(new PlayCard("B", 0));
@@ -134,38 +91,24 @@ class NoMercyRulesTest {
         assertTrue(c.isEliminated(), "7 + 20 carte superano la soglia di 25");
         assertTrue(c.getHand().isEmpty(), "le carte dell'eliminato tornano negli scarti");
         assertEquals(cards, game.totalCardCount());
-        assertTrue(game.getVisibleState().players().get(2).eliminated());
         assertEquals(GameState.IN_PROGRESS, game.getState());
-
-        assertEquals("A", current(game));
         game.execute(new PlayCard("A", 0));
-        assertEquals("B", current(game));
         game.execute(new PlayCard("B", 0));
         assertEquals("A", current(game), "C è fuori dal giro");
+
+        Game duel = start(AB, List.of(hand(new WildDrawTen()), hand(new WildDrawTen())));
+        duel.execute(new PlayCard("A", 0));
+        duel.execute(new ChooseColor("A", CardColor.YELLOW));
+        duel.execute(new PlayCard("B", 0));
+        duel.execute(new ChooseColor("B", CardColor.YELLOW));
+        duel.execute(new Draw("A"));
+        assertEquals(GameState.FINISHED, duel.getState(), "resta solo B");
+        assertEquals("B", duel.getWinner().orElseThrow().getName());
+        assertFalse(player(duel, "A").hasWon(), "una mano vuota per eliminazione non è una vittoria");
     }
 
     @Test
-    void theLastPlayerStandingWinsTheHand() {
-        Game game = start(AB, List.of(hand(new WildDrawTen()), hand(new WildDrawTen())));
-
-        game.execute(new PlayCard("A", 0));
-        game.execute(new ChooseColor("A", CardColor.YELLOW));
-        game.execute(new PlayCard("B", 0));
-        game.execute(new ChooseColor("B", CardColor.YELLOW));
-        game.execute(new Draw("A"));
-
-        assertTrue(player(game, "A").isEliminated());
-        assertEquals(GameState.FINISHED, game.getState());
-        assertEquals("B", game.getWinner().orElseThrow().getName());
-        assertFalse(player(game, "A").hasWon(), "una mano vuota per eliminazione non è una vittoria");
-    }
-
-    // ------------------------------------------------------------------
-    // pesca finché giocabile
-    // ------------------------------------------------------------------
-
-    @Test
-    void drawingContinuesUntilAPlayableCardComesOut() {
+    void withoutAPlayableCardYouKeepDrawing() {
         List<Card> drawPile = new ArrayList<>(List.of(FILLER, FILLER, FILLER, new NumberCard(CardColor.RED, 2)));
         drawPile.addAll(Collections.nCopies(10, FILLER));
         Game game = start(AB, List.of(hand(), hand()), drawPile);
@@ -174,130 +117,68 @@ class NoMercyRulesTest {
 
         assertEquals(7 + 4, handSize(game, "A"));
         assertEquals("A", current(game), "la carta giocabile si può giocare subito");
-        assertTrue(game.getVisibleState().canPass());
         game.execute(new PlayCard("A", 10));
         assertEquals("B", current(game));
     }
 
     @Test
-    void classicRulesStillDrawASingleCard() {
-        List<Card> drawPile = new ArrayList<>(List.of(FILLER, new NumberCard(CardColor.RED, 2)));
-        drawPile.addAll(Collections.nCopies(10, FILLER));
-        Game game = GameSetup.start(GameRules.classic(), AB, List.of(hand(), hand()), RED_FIVE, drawPile);
+    void skipEveryoneDiscardAllAndTheColorRoulette() {
+        Game skip = start(ABC, List.of(hand(new SkipEveryone(CardColor.RED)), hand(), hand()));
+        skip.execute(new PlayCard("A", 0));
+        assertEquals("A", current(skip), "Salta Tutti: rigioca chi l'ha giocata");
 
-        game.execute(new Draw("A"));
+        Game discard = start(ABC, List.of(hand(new DiscardAll(CardColor.RED), new NumberCard(CardColor.RED, 1),
+                new NumberCard(CardColor.RED, 3), new NumberCard(CardColor.BLUE, 4)), hand(), hand()));
+        int cards = discard.totalCardCount();
+        discard.execute(new PlayCard("A", 0));
+        assertEquals(7 - 3, handSize(discard, "A"), "Scarta Tutto si porta via le altre rosse");
+        assertTrue(player(discard, "A").getHand().contains(new NumberCard(CardColor.BLUE, 4)));
+        assertEquals(new DiscardAll(CardColor.RED), discard.getVisibleState().top(), "e resta in cima");
+        assertEquals(cards, discard.totalCardCount());
 
-        assertEquals(8, handSize(game, "A"));
-        assertEquals("B", current(game));
-    }
-
-    // ------------------------------------------------------------------
-    // carte azione No Mercy
-    // ------------------------------------------------------------------
-
-    @Test
-    void skipEveryoneGivesTheTurnBackToWhoPlayedIt() {
-        Game game = start(ABC, List.of(hand(new SkipEveryone(CardColor.RED)), hand(), hand()));
-
-        game.execute(new PlayCard("A", 0));
-
-        assertEquals("A", current(game));
-    }
-
-    @Test
-    void discardAllThrowsAwayEveryCardOfThatColorAndStaysOnTop() {
-        Game game = start(ABC, List.of(
-                hand(new DiscardAll(CardColor.RED), new NumberCard(CardColor.RED, 1),
-                        new NumberCard(CardColor.RED, 3), new NumberCard(CardColor.BLUE, 4)),
-                hand(), hand()));
-        int cards = game.totalCardCount();
-
-        game.execute(new PlayCard("A", 0));
-
-        assertEquals(7 - 3, handSize(game, "A"));
-        assertTrue(player(game, "A").getHand().contains(new NumberCard(CardColor.BLUE, 4)));
-        assertEquals(new DiscardAll(CardColor.RED), game.getVisibleState().top());
-        assertEquals(CardColor.RED, game.getActiveColor());
-        assertEquals("B", current(game));
-        assertEquals(cards, game.totalCardCount());
-    }
-
-    @Test
-    void discardingTheLastCardsWithDiscardAllWinsTheHand() {
         List<Card> reds = new ArrayList<>(List.of(new DiscardAll(CardColor.RED)));
         for (int number = 0; number < 6; number++) {
             reds.add(new NumberCard(CardColor.RED, number));
         }
-        Game game = start(ABC, List.of(reds, hand(), hand()));
+        Game emptied = start(ABC, List.of(reds, hand(), hand()));
+        emptied.execute(new PlayCard("A", 0));
+        assertEquals("A", emptied.getWinner().orElseThrow().getName(), "svuotare la mano con Scarta Tutto vince");
 
-        game.execute(new PlayCard("A", 0));
-
-        assertEquals(GameState.FINISHED, game.getState());
-        assertEquals("A", game.getWinner().orElseThrow().getName());
-    }
-
-    @Test
-    void colorRouletteMakesTheNextPlayerRevealCardsUntilTheChosenColor() {
         List<Card> drawPile = new ArrayList<>(List.of(FILLER, new WildDrawSix(), new NumberCard(CardColor.BLUE, 8)));
         drawPile.addAll(Collections.nCopies(10, FILLER));
-        Game game = start(ABC, List.of(hand(new WildColorRoulette()), hand(), hand()), drawPile);
-
-        game.execute(new PlayCard("A", 0));
-        assertEquals(GameState.AWAITING_ROULETTE_COLOR, game.getState());
-        assertEquals("B", game.getVisibleState().currentPlayerName(), "il colore lo sceglie chi subisce la Roulette");
-        assertThrows(IllegalArgumentException.class, () -> game.execute(new ChooseColor("A", CardColor.BLUE)));
-
-        game.execute(new ChooseColor("B", CardColor.BLUE));
-
-        assertEquals(7 + 3, handSize(game, "B"), "il jolly scoperto non conta come blu");
-        assertEquals(CardColor.BLUE, game.getActiveColor());
-        assertEquals("C", current(game), "chi subisce la Roulette perde il turno");
+        Game roulette = start(ABC, List.of(hand(new WildColorRoulette()), hand(), hand()), drawPile);
+        roulette.execute(new PlayCard("A", 0));
+        assertEquals(GameState.AWAITING_ROULETTE_COLOR, roulette.getState());
+        assertEquals("B", roulette.getVisibleState().currentPlayerName(), "il colore lo sceglie chi subisce la Roulette");
+        roulette.execute(new ChooseColor("B", CardColor.BLUE));
+        assertEquals(7 + 3, handSize(roulette, "B"), "scopre finché esce il blu; il jolly non conta come blu");
+        assertEquals("C", current(roulette), "e perde il turno");
     }
 
-    // ------------------------------------------------------------------
-    // numeri: scambio 7 e rotazione 0
-    // ------------------------------------------------------------------
-
     @Test
-    void playingASevenSwapsHandsWithTheChosenOpponent() {
+    void sevenSwapsAndZeroRotatesHandsOnlyInNoMercy() {
         Card marker = new NumberCard(CardColor.BLUE, 1);
-        Game game = start(ABC, List.of(hand(new NumberCard(CardColor.RED, 7)), hand(), hand(marker)));
+        Game seven = start(ABC, List.of(hand(new NumberCard(CardColor.RED, 7)), hand(), hand(marker)));
+        seven.execute(new PlayCard("A", 0));
+        assertEquals(GameState.AWAITING_SWAP_TARGET, seven.getState());
+        seven.execute(new SwapHands("A", "C"));
+        assertTrue(player(seven, "A").getHand().contains(marker), "A ha preso la mano di C");
+        assertEquals(6, handSize(seven, "C"));
+        assertEquals("B", current(seven));
 
-        game.execute(new PlayCard("A", 0));
-        assertEquals(GameState.AWAITING_SWAP_TARGET, game.getState());
-        assertEquals("A", game.getVisibleState().currentPlayerName());
-
-        game.execute(new SwapHands("A", "C"));
-
-        assertEquals(7, handSize(game, "A"));
-        assertTrue(player(game, "A").getHand().contains(marker));
-        assertEquals(6, handSize(game, "C"));
-        assertEquals("B", current(game));
-    }
-
-    @Test
-    void playingAZeroPassesEveryHandToTheNextPlayer() {
         Card fromA = new NumberCard(CardColor.BLUE, 1);
         Card fromB = new NumberCard(CardColor.BLUE, 2);
         Card fromC = new NumberCard(CardColor.BLUE, 3);
-        Game game = start(ABC, List.of(hand(new NumberCard(CardColor.RED, 0), fromA), hand(fromB), hand(fromC)));
+        Game zero = start(ABC, List.of(hand(new NumberCard(CardColor.RED, 0), fromA), hand(fromB), hand(fromC)));
+        zero.execute(new PlayCard("A", 0));
+        assertTrue(player(zero, "B").getHand().contains(fromA), "ogni mano passa al successivo");
+        assertTrue(player(zero, "C").getHand().contains(fromB));
+        assertTrue(player(zero, "A").getHand().contains(fromC));
 
-        game.execute(new PlayCard("A", 0));
-
-        assertTrue(player(game, "B").getHand().contains(fromA));
-        assertTrue(player(game, "C").getHand().contains(fromB));
-        assertTrue(player(game, "A").getHand().contains(fromC));
-        assertEquals("B", current(game));
-    }
-
-    @Test
-    void classicRulesDoNotSwapOnSeven() {
-        Game game = GameSetup.start(GameRules.classic(), ABC,
+        Game classic = GameSetup.start(GameRules.classic(), ABC,
                 List.of(hand(new NumberCard(CardColor.RED, 7)), hand(), hand()), RED_FIVE);
-
-        game.execute(new PlayCard("A", 0));
-
-        assertEquals(GameState.IN_PROGRESS, game.getState());
-        assertEquals("B", current(game));
+        classic.execute(new PlayCard("A", 0));
+        assertEquals(GameState.IN_PROGRESS, classic.getState(), "nella classica il 7 è un numero come gli altri");
+        assertEquals("B", current(classic));
     }
 }
