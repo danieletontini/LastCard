@@ -22,8 +22,6 @@ import lastcard.view.gui.Settings;
 
 public class Main {
 
-    private static final String HUMAN_NAME = "Tu";
-
     private Main() {
     }
 
@@ -63,18 +61,21 @@ public class Main {
         audio.setVolume(new Settings().effectiveVolume());
         GameSounds sounds = new GameSounds(audio::play);
 
+        // Il nome si chiede una volta sola: vale per tutte le partite della sessione.
+        String playerName = menu.askPlayerName();
         while (menu.askNewGame()) {
             GameSettings settings = menu.askSettings();
-            playConsoleGame(settings, view, sounds);
+            playConsoleGame(playerName, settings, view, sounds);
         }
         System.out.println("Alla prossima!");
     }
 
     // Una partita da terminale con le impostazioni scelte: ritorna quando c'è un vincitore o il giocatore la lascia.
-    private static void playConsoleGame(GameSettings settings, ConsoleView view, GameSounds sounds) {
+    private static void playConsoleGame(String playerName, GameSettings settings, ConsoleView view,
+            GameSounds sounds) {
         List<String> names = new ArrayList<>();
         List<CpuPlayer> cpus = new ArrayList<>();
-        names.add(HUMAN_NAME);
+        names.add(playerName);
         for (int i = 1; i <= settings.opponents(); i++) {
             String name = "CPU " + i;
             names.add(name);

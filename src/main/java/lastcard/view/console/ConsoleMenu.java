@@ -15,10 +15,41 @@ import lastcard.controller.GameSettings;
  */
 public class ConsoleMenu {
 
+    /** Il nome usato se il giocatore non ne scrive uno, o se l'input è chiuso. */
+    public static final String DEFAULT_PLAYER_NAME = "Giocatore";
+    private static final int MAX_NAME_LENGTH = 15;
+    // I nomi delle CPU iniziano così: un giocatore con lo stesso nome si confonderebbe con loro.
+    private static final String CPU_PREFIX = "cpu";
+
     private final Scanner in;
 
     public ConsoleMenu(Scanner in) {
         this.in = Objects.requireNonNull(in, "in");
+    }
+
+    /**
+     * Chiede il nome del giocatore, una volta sola all'avvio. Invio senza scrivere niente sceglie il nome predefinito.
+     * Il nome non può essere più lungo di MAX_NAME_LENGTH caratteri né iniziare come quello di una CPU.
+     */
+    public String askPlayerName() {
+        while (true) {
+            System.out.println("Come ti chiami? (Invio per \"" + DEFAULT_PLAYER_NAME + "\")");
+            System.out.print("> ");
+            if (!in.hasNextLine()) {
+                return DEFAULT_PLAYER_NAME;
+            }
+            String name = in.nextLine().trim();
+            if (name.isEmpty()) {
+                return DEFAULT_PLAYER_NAME;
+            }
+            if (name.length() > MAX_NAME_LENGTH) {
+                System.out.println("Errore: il nome può avere al massimo " + MAX_NAME_LENGTH + " caratteri.");
+            } else if (name.toLowerCase().startsWith(CPU_PREFIX)) {
+                System.out.println("Errore: il nome non può iniziare con \"CPU\", è riservato agli avversari.");
+            } else {
+                return name;
+            }
+        }
     }
 
     /** Il menu principale, all'avvio e dopo ogni partita: vero se si vuole giocare, falso per uscire. Con l'input chiuso esce. */
