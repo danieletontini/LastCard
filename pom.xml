@@ -25,7 +25,7 @@
   </dependencies>
 
   <build>
-    <!-- Il jar si chiama target/lastcard.jar,
+    <!-- Il jar si chiama target/lastcard.jar, senza versione: il comando di avvio resta corto. -->
     <finalName>lastcard</finalName>
     <plugins>
       <plugin>
