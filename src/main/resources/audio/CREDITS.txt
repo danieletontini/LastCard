@@ -1,21 +1,11 @@
 SUONI E MUSICHE DI ULTIMA CARTA
 
-I file vanno in questa cartella con esattamente questi nomi. Se uno manca, il gioco
-resta in silenzio per quel suono, senza errori.
-
-Formato: WAV (PCM 16 bit). Java non riproduce MP3 né OGG: si convertono con Audacity
-(File > Esporta > WAV). Per la musica bastano mono e 22050 Hz: il file intero viene
-caricato in memoria e finisce nel jar, quindi conviene tenerlo piccolo.
-
-Usare solo file con licenza libera (CC0, CC-BY, licenza Pixabay) e compilare la riga
-corrispondente qui sotto. Con CC-BY l'attribuzione all'autore è obbligatoria.
-
 File                Quando suona                         Fonte (URL)                                                                            Autore               Licenza
 ------------------  -----------------------------------  ------------                                                                           -------              -------
 menu-music.wav      musica di sottofondo del menu, loop  https://pixabay.com/sound-effects/musical-gamemusic-6082/                              Magntron             https://pixabay.com/service/license-summary/
 button-click.wav    pressione di un pulsante del menu    https://pixabay.com/sound-effects/film-special-effects-button-click-289742/            freesoundeffects     https://pixabay.com/service/license-summary/
 card-played.wav     carta giocata                        https://pixabay.com/sound-effects/film-special-effects-taking-playing-card-2-522516/   OxidVideos           https://pixabay.com/service/license-summary/
 card-drawn.wav      carta pescata                        https://pixabay.com/sound-effects/film-special-effects-flipcard-91468/                 Splashdust           https://pixabay.com/service/license-summary/
-last-card.wav       dichiarazione di "Ultima!"           TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
-penalty.wav         penalità per "Ultima!" dimenticato   TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
-victory.wav         vittoria                             TODO                                                                                   Ultima Carta         nostro, nessuna restrizione
+last-card.wav       dichiarazione di "Ultima!"           Generati dall'IA                                                                                  Ultima Carta         nostro, nessuna restrizione
+penalty.wav         penalità per "Ultima!" dimenticato   Generati dall IA                                                                                  Ultima Carta         nostro, nessuna restrizione
+victory.wav         vittoria                             Generati dall IA                                                                                   Ultima Carta         nostro, nessuna restrizione

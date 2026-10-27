@@ -61,6 +61,7 @@ public class Main {
         audio.setVolume(new Settings().effectiveVolume());
         GameSounds sounds = new GameSounds(audio::play);
 
+        menu.showTitle();
         // Il nome si chiede una volta sola: vale per tutte le partite della sessione.
         String playerName = menu.askPlayerName();
         while (menu.askNewGame()) {

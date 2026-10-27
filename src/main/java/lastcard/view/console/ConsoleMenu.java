@@ -20,11 +20,40 @@ public class ConsoleMenu {
     private static final int MAX_NAME_LENGTH = 15;
     // I nomi delle CPU iniziano così: un giocatore con lo stesso nome si confonderebbe con loro.
     private static final String CPU_PREFIX = "cpu";
+    // Larghezza interna del riquadro del titolo, in caratteri.
+    private static final int TITLE_WIDTH = 40;
+    private static final String BOLD = "\u001B[1m";
+    private static final String RESET = "\u001B[0m";
 
     private final Scanner in;
 
     public ConsoleMenu(Scanner in) {
         this.in = Objects.requireNonNull(in, "in");
+    }
+
+    /** Il titolo del gioco in un riquadro, all'avvio: come la schermata iniziale della GUI. */
+    public void showTitle() {
+        String border = "═".repeat(TITLE_WIDTH);
+        System.out.println();
+        System.out.println("╔" + border + "╗");
+        System.out.println("║" + centered("", false) + "║");
+        System.out.println("║" + centered("U L T I M A   C A R T A", true) + "║");
+        System.out.println("║" + centered("", false) + "║");
+        System.out.println("║" + centered("Classica e No Mercy contro la CPU", false) + "║");
+        System.out.println("╚" + border + "╝");
+        System.out.println();
+    }
+
+    // Il testo al centro di una riga larga TITLE_WIDTH. Gli spazi si contano sul testo semplice,
+    // perché i codici del grassetto non occupano spazio sullo schermo.
+    private String centered(String text, boolean bold) {
+        int left = (TITLE_WIDTH - text.length()) / 2;
+        int right = TITLE_WIDTH - text.length() - left;
+        String shown = text;
+        if (bold) {
+            shown = BOLD + text + RESET;
+        }
+        return " ".repeat(left) + shown + " ".repeat(right);
     }
 
     /**
